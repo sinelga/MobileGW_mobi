@@ -10,9 +10,11 @@ body {
   color:#428bca;
 }
 
+/*
 @-ms-viewport{
   width: device-width;
 }
+*/
 .googlefonttitle {
   font-family: 'Permanent Marker', cursive;
   font-size: 140%;
