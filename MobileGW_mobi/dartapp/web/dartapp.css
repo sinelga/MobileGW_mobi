@@ -7,6 +7,7 @@ body {
 /*  font-weight: normal;*/
 /*  line-height: 1.2em;*/
   margin: 5px;
+  color:#428bca;
 }
 
 @-ms-viewport{
@@ -14,8 +15,8 @@ body {
 }
 .googlefonttitle {
   font-family: 'Permanent Marker', cursive;
-  font-size: 120%;
-  text-shadow: 2px 2px 2px #aaa;
+  font-size: 140%;
+  text-shadow: 3px 3px 3px #aaa;
   color: red !important;
 }
 
@@ -31,3 +32,4 @@ body {
   margin-left: auto ;
   margin-right: auto ;
 }
+

@@ -14,8 +14,8 @@ void main() {
     
   Future<js.Proxy> result = jsonp.fetch(
       
-//      uri: "http://79.125.21.225:3090/get_characters?number=50&orient=portrait&callback=?"
-      uri: "http://79.125.21.225:3090/get_characters?number=50&orient=landscape&callback=?"
+      uri: "http://79.125.21.225:3090/get_characters?number=50&orient=portrait&callback=?"
+//      uri: "http://79.125.21.225:3090/get_characters?number=50&orient=landscape&callback=?"
  
   );
     
@@ -55,11 +55,11 @@ void display(var data) {
 createMediaObject(i,Character item){
   
   var id = i.toString();
-  var title ="<i class='fa fa-share'></i><div class='googlefonttitle'>"+item.name+" "+item.age+"v</div>";
-  var imagelink = item.img;
+  var title ="<i class='fa fa-share fa-lg'></i><div class='googlefonttitle'>"+item.name+" "+item.age+"v</div>";
+  var imagelink = item.img.replaceFirst("thumb", "w110shadow6");
   var cont = "<p class='media-heading googlefontcont'>"+item.city+"</p>";
   
-  var htmlstr = "<div class='media'><img class='media-object pull-left img-thumbnail itemimage' src='${imagelink}' alt=''><div class='media-body'> <h4 class='media-heading'>${title}</h4>${cont}</div></div>";
+  var htmlstr = "<div class='media'><img class='media-object pull-left itemimagea' src='${imagelink}' alt=''><div class='media-body'> <div class='media-heading'>${title}</div>${cont}</div></div>";
   
   var divElement = new DivElement();
   divElement.onClick.listen((event) => clickonitemevent.show(event,characterarr));
