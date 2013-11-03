@@ -29,7 +29,7 @@ show(event,List<Character> forMarkList) {
   var itemid = int.parse(event.currentTarget.id);
 //  var itemid = int.parse(event.target.);
   var item = forMarkList[itemid];
-
+  var phone = item.phone;
   var title =item.name+" "+item.age+"v"+" "+item.city;
 //  var pubdate = item.PubDate;
   var imagelink = item.img.replaceFirst("thumb", "h240shadow");
@@ -37,7 +37,7 @@ show(event,List<Character> forMarkList) {
   
 //  var ads = "<script async src='//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js'></script><ins class='adsbygoogle' style='display:inline-block;width:180px;height:150px' data-ad-client='ca-pub-4265026941264081' data-ad-slot='9659344258'></ins> <script> (adsbygoogle = window.adsbygoogle || []).push({}); </script>";
   
-  var htmlstr="<div class='page-header'> ${title}</div><div class='media'><img class='media-object img-rounded' src='${imagelink}' alt=''><div class='media-body'><p class='media-heading googlefontcont'>${cont}</p></div></div> ";
+  var htmlstr="<p class='bigphone'>${phone}</p> <div> ${title}</div><div class='media'><img class='media-object img-rounded' src='${imagelink}' alt=''><div class='media-body'><p class='media-heading googlefontcont'>${cont}</p></div></div> ";
   
 //  var divElement = new DivElement();
   var divElement=new AnchorElement();

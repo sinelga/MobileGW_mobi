@@ -22,6 +22,17 @@ body {
   color: red !important;
 }
 
+.bigphone {
+   font-family: 'Permanent Marker', cursive;
+  text-shadow: 4px 4px 4px #aaa;
+ /* width: 70%; */
+ font-size: 170%;
+  width: 90%;
+  margin-left: auto ;
+  margin-right: auto ;
+  color: red;
+  
+}
 
 
 .bigspinner {

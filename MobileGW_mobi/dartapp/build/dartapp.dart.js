@@ -2829,7 +2829,7 @@ z.push(x)}return z
 "+groups:1:0":1,
 h5:function(a,b){return this.M.call$1(b)},
 wE:function(a){return this.M.call$0()},
-$isOd:true},"+StringMatch": [394],"":"vtu<-,Bv@-,Zv@-"}],["","file:///home/juno/git/MobileGW_mobi/MobileGW_mobi/dartapp/web/events/clickonitemevent.dart",,Z,{Tp:function(a,b){var z,y,x,w,v,u,t,s
+$isOd:true},"+StringMatch": [394],"":"vtu<-,Bv@-,Zv@-"}],["","file:///home/juno/git/MobileGW_mobi/MobileGW_mobi/dartapp/web/events/clickonitemevent.dart",,Z,{Tp:function(a,b){var z,y,x,w,v,u,t,s,r
 if($.YT!==!0){$.JK=W.U9("<i class='fa fa-times-circle-o fa-2x'></i>",null,null)
 J.Vg($.JK).yI(new Z.zG())
 document.querySelector("#close").appendChild($.JK)
@@ -2837,18 +2837,19 @@ $.YT=!0}else J.oH(document.querySelector("#close").style,"block")
 z=document.querySelector("#seleteditem")
 J.oH(document.querySelector("#center").style,"none")
 y=J.UQ(b,H.Hp(J.F8(J.vU(a)),null,null))
-x=J.RE(y)
-w=J.WB(J.WB(J.WB(J.WB(J.WB(x.goc(y)," "),y.gLh()),"v")," "),y.gRo())
-v=J.md(x.gXi(y),"thumb","h240shadow")
-u=y.gqd()
-t="<div class='page-header'> "+H.d(w)+"</div><div class='media'><img class='media-object img-rounded' src='"+H.d(v)+"' alt=''><div class='media-body'><p class='media-heading googlefontcont'>"+H.d(u)+"</p></div></div> "
-s=W.J6(null)
-x=J.RE(s)
-x.smH(s,C.xB.g("tel:",y.gtx()))
-x.hQ(s,t,new Z.ie())
-if(z.hasChildNodes()===!0){x=J.uw(z)
-x.V1(x)
-z.appendChild(s)}else z.appendChild(s)
+x=y.gtx()
+w=J.RE(y)
+v=J.WB(J.WB(J.WB(J.WB(J.WB(w.goc(y)," "),y.gLh()),"v")," "),y.gRo())
+u=J.md(w.gXi(y),"thumb","h240shadow")
+t=y.gqd()
+s="<p class='bigphone'>"+H.d(x)+"</p> <div> "+H.d(v)+"</div><div class='media'><img class='media-object img-rounded' src='"+H.d(u)+"' alt=''><div class='media-body'><p class='media-heading googlefontcont'>"+H.d(t)+"</p></div></div> "
+r=W.J6(null)
+w=J.RE(r)
+w.smH(r,C.xB.g("tel:",y.gtx()))
+w.hQ(r,s,new Z.ie())
+if(z.hasChildNodes()===!0){w=J.uw(z)
+w.V1(w)
+z.appendChild(r)}else z.appendChild(r)
 "246,397,246,398,399"},"+show:2:0":1,zG:{"":"d9;",
 call$1:function(a){return G.QF(a)
 "246,397,246"},
