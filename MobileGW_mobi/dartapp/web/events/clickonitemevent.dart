@@ -4,22 +4,20 @@ import 'closeevent.dart' as closeevent;
 import 'gotochatevent.dart' as gotochatevent;
 import 'dart:async';
 import "package:js/js.dart" as js;
-//import "package:jsonp/jsonp.dart" as jsonp;
+import "package:jsonp/jsonp.dart" as jsonp;
 //import 'chatarriveevent.dart' as chatarriveevent;
 
 var start = false;
 var close = DivElement;
 Stream<js.Proxy> chat_stream;
+var payable =false;
 
 show(Event e,String uuid,List<Character> forMarkList) {
-
   
   var itemid = int.parse((e.currentTarget as Element).id);
   var item = forMarkList[itemid];
-  
-//  print("show "+item.phone);
-  
-  
+
+    
   if (!start) {
     
     close = new Element.html("<i class='fa fa-times-circle-o fa-2x'></i>");
@@ -28,12 +26,52 @@ show(Event e,String uuid,List<Character> forMarkList) {
     closeelem.append(close);
     start=true;
     
-//    chat_stream = jsonp.fetchMany("chat");
-//    
-//    chat_stream.forEach(
-//            
-//        (js.Proxy data) =>chatarriveevent.elaborate(uuid,item,data)
-//    );
+    Future<js.Proxy> result = jsonp.fetch(
+        
+        uri: "http://gw.sinelgamysql.appspot.com/scanips?&callback=?"
+          
+    );
+    
+    result.then((js.Proxy proxy) {
+      
+      print(proxy.provider);
+      
+      if (!(proxy.provider == "NotMobile")) {
+        
+        String site = document.domain;
+        
+        document.body.nodes.add(new ScriptElement()..src =
+            "http://sinelga.mbgw.elisa.fi/serviceurl?id="+uuid+"&site="+site+"&resource=mobilephone");
+        
+      }
+
+      new Timer.periodic(new Duration(seconds:6), (timer) {
+
+        
+        Future<js.Proxy> result = jsonp.fetch(
+            
+            uri: "http://gw.sinelgamysql.appspot.com/setpayment?uuid="+uuid+"&callback=?"
+
+              
+        );
+        
+        result.then((js.Proxy proxy) {
+          
+          print(proxy.results.msisdn);
+          
+          
+        });
+                
+        
+        timer.cancel(); // cancel the timer
+        
+      });
+      
+      
+      
+      
+    });
+    
        
     
   } else {
