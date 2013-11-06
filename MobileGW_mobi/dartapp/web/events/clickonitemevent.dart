@@ -26,51 +26,48 @@ show(Event e,String uuid,List<Character> forMarkList) {
     closeelem.append(close);
     start=true;
     
-    Future<js.Proxy> result = jsonp.fetch(
-        
-        uri: "http://gw.sinelgamysql.appspot.com/scanips?&callback=?"
-          
-    );
-    
-    result.then((js.Proxy proxy) {
-      
-      print(proxy.provider);
-      
-      if (!(proxy.provider == "NotMobile")) {
-        
-        String site = document.domain;
-        
-        document.body.nodes.add(new ScriptElement()..src =
-            "http://sinelga.mbgw.elisa.fi/serviceurl?id="+uuid+"&site="+site+"&resource=mobilephone");
-        
-      }
-
-      new Timer.periodic(new Duration(seconds:6), (timer) {
-
-        
-        Future<js.Proxy> result = jsonp.fetch(
-            
-            uri: "http://gw.sinelgamysql.appspot.com/setpayment?uuid="+uuid+"&callback=?"
-
-              
-        );
-        
-        result.then((js.Proxy proxy) {
-          
-          print(proxy.results.msisdn);
-          
-          
-        });
-                
-        
-        timer.cancel(); // cancel the timer
-        
-      });
-      
-      
-      
-      
-    });
+//    Future<js.Proxy> result = jsonp.fetch(
+//        
+//        uri: "http://gw.sinelgamysql.appspot.com/scanips?&callback=?"
+//          
+//    );
+//    
+//    result.then((js.Proxy proxy) {
+//      
+//      print(proxy.provider);
+//      
+//      if (!(proxy.provider == "NotMobile")) {
+//        
+//        String site = document.domain;
+//        
+//        document.body.nodes.add(new ScriptElement()..src =
+//            "http://sinelga.mbgw.elisa.fi/serviceurl?id="+uuid+"&site="+site+"&resource=mobilephone");
+//        
+//      }
+//
+//      new Timer.periodic(new Duration(seconds:6), (timer) {
+//
+//        
+//        Future<js.Proxy> result = jsonp.fetch(
+//            
+//            uri: "http://gw.sinelgamysql.appspot.com/setpayment?uuid="+uuid+"&callback=?"
+//
+//              
+//        );
+//        
+//        result.then((js.Proxy proxy) {
+//          
+//          print(proxy.results.msisdn);
+//          
+//          
+//        });
+//                
+//        
+//        timer.cancel(); // cancel the timer
+//        
+//      });
+//            
+//    });
     
        
     

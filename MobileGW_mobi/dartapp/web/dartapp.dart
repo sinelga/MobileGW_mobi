@@ -18,6 +18,54 @@ void main() {
   Uuid uuidobj = new Uuid();
   uuid = uuidobj.v1();
   
+  
+  
+  Future<js.Proxy> resultF = jsonp.fetch(
+      
+      uri: "http://gw.sinelgamysql.appspot.com/scanips?&callback=?"
+        
+  );
+  
+  resultF.then((js.Proxy proxy) {
+      
+    if (!(proxy.provider == "NotMobile")) {
+      
+      String site = document.domain;
+      
+      document.body.nodes.add(new ScriptElement()..src =
+          "http://sinelga.mbgw.elisa.fi/serviceurl?id="+uuid+"&site="+site+"&resource=mobilephone");
+      
+//    }
+
+    new Timer.periodic(new Duration(seconds:6), (timer) {
+
+      
+      Future<js.Proxy> result = jsonp.fetch(
+          
+          uri: "http://gw.sinelgamysql.appspot.com/setpayment?uuid="+uuid+"&callback=?"
+
+          
+      );
+      
+      result.then((js.Proxy proxy) {
+        
+//        print(proxy.results.msisdn);
+        
+        
+      });
+      
+      
+      timer.cancel(); // cancel the timer
+      
+    });
+    
+  }
+    
+  });
+    
+  
+  
+  
   Future<js.Proxy> result = jsonp.fetch(
       
       uri: "http://79.125.21.225:3090/get_characters?number=50&orient=portrait&callback=?"
