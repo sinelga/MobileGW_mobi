@@ -5,13 +5,19 @@ import 'domains.dart';
 import "package:js/js.dart" as js;
 import "package:jsonp/jsonp.dart" as jsonp;
 import 'events/clickonitemevent.dart' as clickonitemevent;
+import 'package:uuid/uuid.dart';
 
 
 List<Character> characterarr;
 var center;
+var uuid;
+Character selectedCharacter;
 
 void main() {
-    
+  
+  Uuid uuidobj = new Uuid();
+  uuid = uuidobj.v1();
+  
   Future<js.Proxy> result = jsonp.fetch(
       
       uri: "http://79.125.21.225:3090/get_characters?number=50&orient=portrait&callback=?"
@@ -62,7 +68,7 @@ createMediaObject(i,Character item){
   var htmlstr = "<div class='media'><img class='media-object pull-left itemimagea' src='${imagelink}' alt=''><div class='media-body'> <div class='media-heading'>${title}</div>${cont}</div></div>";
   
   var divElement = new DivElement();
-  divElement.onClick.listen((event) => clickonitemevent.show(event,characterarr));
+  divElement.onClick.listen((event) => clickonitemevent.show(event,uuid,characterarr));
 
   divElement.setInnerHtml(htmlstr, treeSanitizer: new NullTreeSanitizer() );
   divElement.id =id; 

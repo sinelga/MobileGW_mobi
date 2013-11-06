@@ -23,14 +23,27 @@ body {
 }
 
 .bigphone {
-   font-family: 'Permanent Marker', cursive;
+ /* display: block;*/
+  font-family: 'Permanent Marker', cursive;
   text-shadow: 4px 4px 4px #aaa;
  /* width: 70%; */
- font-size: 170%;
-  width: 90%;
+ font-size: 200%;
+  /*width: 90%;*/
   margin-left: auto ;
   margin-right: auto ;
-  color: red;
+  color: red !important;  
+}
+
+.googlefontcont {
+ 
+  
+  
+}
+
+.inputgroupsize {
+  
+  width: 55%;
+ /* float: right; */
   
 }
 

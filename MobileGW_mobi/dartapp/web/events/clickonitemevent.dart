@@ -1,12 +1,25 @@
 import '../domains.dart';
 import 'dart:html';
 import 'closeevent.dart' as closeevent;
+import 'gotochatevent.dart' as gotochatevent;
+import 'dart:async';
+import "package:js/js.dart" as js;
+//import "package:jsonp/jsonp.dart" as jsonp;
+//import 'chatarriveevent.dart' as chatarriveevent;
 
 var start = false;
 var close = DivElement;
+Stream<js.Proxy> chat_stream;
 
-show(event,List<Character> forMarkList) {
+show(Event e,String uuid,List<Character> forMarkList) {
 
+  
+  var itemid = int.parse((e.currentTarget as Element).id);
+  var item = forMarkList[itemid];
+  
+//  print("show "+item.phone);
+  
+  
   if (!start) {
     
     close = new Element.html("<i class='fa fa-times-circle-o fa-2x'></i>");
@@ -15,43 +28,63 @@ show(event,List<Character> forMarkList) {
     closeelem.append(close);
     start=true;
     
+//    chat_stream = jsonp.fetchMany("chat");
+//    
+//    chat_stream.forEach(
+//            
+//        (js.Proxy data) =>chatarriveevent.elaborate(uuid,item,data)
+//    );
+       
+    
   } else {
 
     querySelector('#close').style.display="block";
     
   }
+   
   
+  var bigphone = querySelector("#bigphone");
   var seleteditemplace = querySelector("#seleteditem");
-  
-//  querySelector("#rssfeeder").hidden=true;
+ 
   querySelector("#center").style.display="none";
-  
-  var itemid = int.parse(event.currentTarget.id);
-//  var itemid = int.parse(event.target.);
-  var item = forMarkList[itemid];
-  var phone = item.phone;
+
+  var phone ="<i class='fa fa-phone'></i> "+ item.phone;
   var title =item.name+" "+item.age+"v"+" "+item.city;
-//  var pubdate = item.PubDate;
-  var imagelink = item.img.replaceFirst("thumb", "h240shadow");
-  var cont = item.moto;
+  var imagelink = item.img.replaceFirst("thumb", "w110shadow");
   
-//  var ads = "<script async src='//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js'></script><ins class='adsbygoogle' style='display:inline-block;width:180px;height:150px' data-ad-client='ca-pub-4265026941264081' data-ad-slot='9659344258'></ins> <script> (adsbygoogle = window.adsbygoogle || []).push({}); </script>";
+  var phoneElement=new AnchorElement();
   
-  var htmlstr="<p class='bigphone'>${phone}</p> <div> ${title}</div><div class='media'><img class='media-object img-rounded' src='${imagelink}' alt=''><div class='media-body'><p class='media-heading googlefontcont'>${cont}</p></div></div> ";
-  
-//  var divElement = new DivElement();
-  var divElement=new AnchorElement();
-  divElement.href="tel:"+item.phone;
-  divElement.setInnerHtml(htmlstr, treeSanitizer: new NullTreeSanitizer() );
-  
-  if (seleteditemplace.hasChildNodes()) {
+  phoneElement.href="tel:"+item.phone;
+  phoneElement.setInnerHtml("<div>${phone}</div>", treeSanitizer: new NullTreeSanitizer());
+  phoneElement.style.color="red";
 
-    seleteditemplace.children.clear();
-    seleteditemplace.append(divElement);
-  } else {
-
-    seleteditemplace.append(divElement);
-  }
+ 
+  var imgBlock =new AnchorElement();
+  imgBlock.href="tel:"+item.phone;
+  
+  var imgBlocksInnerHtml = "<div class='media'><img class='media-object' src='${imagelink}' alt=''><div class='media-body'><p class='media-heading pull-left googlefontcont'>"+item.name+" "+item.age+"v "+item.city+"</p></div>"+item.moto+" </div>";
+  
+  var mediaElement=new AnchorElement();
+  mediaElement.href="tel:"+item.phone;
+  mediaElement.setInnerHtml(imgBlocksInnerHtml,treeSanitizer: new NullTreeSanitizer());
+ 
+  var placeholdertxt = "Hei "+item.name+"!";
+  
+  bigphone.append(phoneElement);
+  querySelector("#media").append(mediaElement);
+  var inputgroup =querySelector("#inputgroup");
+  inputgroup.appendHtml("<input id='firstinput' type='text' class='form-control' placeholder='"+placeholdertxt +"'>");
+  
+  var gotochatebutton = new ButtonElement();
+  gotochatebutton.text="Go to Chatti!";
+  gotochatebutton.classes.add("btn btn-danger btn-lg");
+  gotochatebutton.style.marginTop="15px";
+  InputElement submit = querySelector("#firstinput");
+  gotochatebutton.onClick.listen((event)=> gotochatevent.go(event,uuid,item,submit));
+  
+  inputgroup.append(gotochatebutton);
+  inputgroup.style.float="right";
+   
   
 }
 

@@ -3,3 +3,5 @@ description: A sample web application
 dependencies:
   browser: any
   jsonp: any
+  uuid: any
+  css_animation: any

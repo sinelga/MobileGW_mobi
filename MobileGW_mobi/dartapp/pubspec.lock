@@ -5,6 +5,14 @@ packages:
     description: browser
     source: hosted
     version: "0.8.7"
+  crypto:
+    description: crypto
+    source: hosted
+    version: "0.8.7"
+  css_animation:
+    description: css_animation
+    source: hosted
+    version: "0.1.5"
   js:
     description: js
     source: hosted
@@ -17,3 +25,19 @@ packages:
     description: meta
     source: hosted
     version: "0.8.7"
+  path:
+    description: path
+    source: hosted
+    version: "0.8.7"
+  stack_trace:
+    description: stack_trace
+    source: hosted
+    version: "0.8.7"
+  unittest:
+    description: unittest
+    source: hosted
+    version: "0.8.7"
+  uuid:
+    description: uuid
+    source: hosted
+    version: "0.1.6"
