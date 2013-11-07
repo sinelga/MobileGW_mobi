@@ -37,8 +37,6 @@ void main() {
       Element staticTop = new Element.nav();
       staticTop.classes.add("navbar navbar-fixed-top");
       staticTop.style.background="white";
-//      var htmlVerticalText ="<p>S</p"
-//      staticTop.text="Suora puhelinnumero";
       staticTop.innerHtml="<div id='directnumber' class='ads'>Suora puhelinnumero!</div>";
       querySelector('#ads').append(staticTop);
       

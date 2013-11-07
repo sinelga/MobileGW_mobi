@@ -3212,6 +3212,8 @@ J.Vg($.JK).yI(new Z.zG())
 document.querySelector("#close").appendChild($.JK)
 $.YT=!0}else J.oH(document.querySelector("#close").style,"block")
 if(d===!0){y=document.querySelector("#directnumber")
+J.Z8(J.pP(y))
+J.tC(y.style,"10px")
 y.textContent=J.WB(J.C9(z),": suora puhelinnumero -> ")
 x=document.createElement("button",null)
 w=J.RE(x)
@@ -14896,7 +14898,7 @@ static:{B:function(a,b){return P.L5(null,null,null,a,b)
 "1014"},"+new Map:0:0":1,Pc:function(a,b,c){var z=P.L5(null,null,null,b,c)
 z.FV(z,a)
 return z
-"1014,402,1014"},"+new Map$from:1:0":1,NV:function(a,b){return P.Q9(a,b)
+"1014,402,1014"},"+new Map$from:1:0":1,zMq:function(a,b){return P.Q9(a,b)
 "1014"},"+new Map$identity:0:0":1,Z3:function(a,b,c,d,e){return P.l9(a,b,c,d,e)
 "1014,456,457,254,1015,308,1016"},"+new Map$fromIterable:1:2:key:value":1,"*fromIterable":[255,255],l0:function(a,b,c,d){return P.X6(a,b,c,d)
 "1014,773,1017,775,1018"},"+new Map$fromIterables:2:0":1}},"+Map": [0],c8:{"":"a;",
@@ -26911,7 +26913,7 @@ return a
 "1523"},"+new TableSectionElement$created:0:0":1,wpc:function(){throw H.b(P.f("Not supported"))
 "1524"},"+new TemplateElement$_:0:0":1,S7W:function(){return document.createElement("template",null)
 "1524,1525,1069"},"+new TemplateElement:0:0":1,yK:function(a){a.toString
-C.tC.ZL(a)
+C.Lq.ZL(a)
 return a
 "1524"},"+new TemplateElement$created:0:0":1,yLQ:function(){return W.RU("template")
 "271"},"+supported":1,KHb:function(a){return document.createTextNode(a)
@@ -39154,7 +39156,7 @@ return a
 "1812"},"+new ElementInstance$_:0:0":1,Wf8:function(){throw H.b(P.f("Not supported"))
 "1813"},"+new EllipseElement$_:0:0":1,dl6:function(){return document.createElementNS("http://www.w3.org/2000/svg","ellipse")
 "1813,1814,1069"},"+new EllipseElement:0:0":1,dH8:function(a){a.toString
-C.Lq.ZL(a)
+C.NV.ZL(a)
 return a
 "1813"},"+new EllipseElement$created:0:0":1,usz:function(){throw H.b(P.f("Not supported"))
 "1816"},"+new FEBlendElement$_:0:0":1,Hf3:function(){return document.createElementNS("http://www.w3.org/2000/svg","feBlend")
@@ -50198,7 +50200,7 @@ C.xyC=new B.q7("Database.changeVersion")
 C.RT=new P.a6(0)
 C.vM=new P.a6(1000000)
 C.zC=W.cv.prototype
-C.Lq=P.esM.prototype
+C.NV=P.esM.prototype
 C.vm=W.Fs1.prototype
 C.Ti=new P.G3(!1)
 C.aJ=new P.G3(!0)
@@ -51022,7 +51024,7 @@ C.GV=W.GIV.prototype
 C.Ie=W.inA.prototype
 C.kv=W.Iv.prototype
 C.ZK=W.BT.prototype
-C.tC=W.yY.prototype
+C.Lq=W.yY.prototype
 C.Ai=W.FBi.prototype
 C.kq=P.mHq.prototype
 C.Jv=P.jkr.prototype
@@ -51818,6 +51820,7 @@ J.qz=function(a){return J.RE(a).qt(a)}
 J.rK=function(a){return J.RE(a).geX(a)}
 J.rU=function(a){return J.RE(a).guf(a)}
 J.t3=function(a,b){return J.RE(a).sa4(a,b)}
+J.tC=function(a,b){return J.RE(a).sWW(a,b)}
 J.tCZ=function(a,b){return J.RE(a).At(a,b)}
 J.tD=function(a,b){return J.RE(a).sM3(a,b)}
 J.u1=function(a,b){return J.Wx(a).WZ(a,b)}
