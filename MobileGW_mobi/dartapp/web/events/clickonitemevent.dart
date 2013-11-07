@@ -12,7 +12,7 @@ var close = DivElement;
 Stream<js.Proxy> chat_stream;
 var payable =false;
 
-show(Event e,String uuid,List<Character> forMarkList) {
+show(Event e,String uuid,List<Character> forMarkList,bool payable) {
   
   var itemid = int.parse((e.currentTarget as Element).id);
   var item = forMarkList[itemid];
@@ -32,7 +32,19 @@ show(Event e,String uuid,List<Character> forMarkList) {
     querySelector('#close').style.display="block";
     
   }
-   
+  
+  if (payable) {
+    var directnumberEl   =querySelector('#directnumber');
+    
+    directnumberEl.text = item.name+": suora puhelinnumero -> ";
+    ButtonElement buttonElement = new ButtonElement();
+    buttonElement.innerHtml="1 &euro;";
+    buttonElement.classes.add("btn btn-danger");
+    directnumberEl.append(buttonElement);
+  }
+  
+  
+  
   
   var bigphone = querySelector("#bigphone");
   var seleteditemplace = querySelector("#seleteditem");

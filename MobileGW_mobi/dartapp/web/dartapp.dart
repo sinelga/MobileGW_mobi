@@ -39,10 +39,8 @@ void main() {
       staticTop.style.background="white";
 //      var htmlVerticalText ="<p>S</p"
 //      staticTop.text="Suora puhelinnumero";
-      staticTop.innerHtml="<div class='ads'>Suora puhelinnumero!</div>";
+      staticTop.innerHtml="<div id='directnumber' class='ads'>Suora puhelinnumero!</div>";
       querySelector('#ads').append(staticTop);
-//      document.body.append(staticTop);
-      
       
       String site = document.domain;
       
@@ -130,7 +128,7 @@ createMediaObject(i,Character item){
   var htmlstr = "<div class='media'><img class='media-object pull-left itemimagea' src='${imagelink}' alt=''><div class='media-body'> <div class='media-heading'>${title}</div>${cont}</div></div>";
   
   var divElement = new DivElement();
-  divElement.onClick.listen((event) => clickonitemevent.show(event,uuid,characterarr));
+  divElement.onClick.listen((event) => clickonitemevent.show(event,uuid,characterarr,payable));
 
   divElement.setInnerHtml(htmlstr, treeSanitizer: new NullTreeSanitizer() );
   divElement.id =id; 
