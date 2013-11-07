@@ -37,6 +37,7 @@ show(Event e,String uuid,List<Character> forMarkList,bool payable) {
     var directnumberEl   =querySelector('#directnumber');
     directnumberEl.classes.clear();
     directnumberEl.style.marginLeft="10px";
+    directnumberEl.style.marginTop="5px";
 //    directnumberEl.classes.add()
     directnumberEl.text = item.name+": suora puhelinnumero -> ";
     ButtonElement buttonElement = new ButtonElement();
