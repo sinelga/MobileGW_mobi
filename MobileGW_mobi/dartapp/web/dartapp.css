@@ -35,9 +35,7 @@ body {
 }
 
 .googlefontcont {
- 
-  
-  
+   
 }
 
 .inputgroupsize {
@@ -58,4 +56,10 @@ body {
   margin-left: auto ;
   margin-right: auto ;
 }
-
+.ads {
+  font-size: 170%;
+  width: 50%;
+  margin-left: auto ;
+  margin-right: auto ;
+  
+}

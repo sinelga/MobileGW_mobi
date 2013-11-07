@@ -72,9 +72,6 @@ library js;
 import 'dart:js' as js;
 import 'dart:mirrors';
 
-import 'package:meta/meta.dart' show proxy;
-
-
 /**
  * A proxy on the global JavaScript context for this page.
  */
@@ -128,7 +125,7 @@ List _pruneUndefined(arg1, arg2, arg3, arg4, arg5, arg6) {
  * Proxies to JavaScript objects.
  */
 @proxy
-class Proxy implements Serializable<Proxy> {
+class Proxy<T extends Proxy> implements Serializable<T> {
   final js.JsObject _jsObject;
 
   Proxy._(this._jsObject);
@@ -243,8 +240,7 @@ class _CallbackFunction implements Function {
 }
 
 /// A [Proxy] subtype to JavaScript functions.
-class FunctionProxy extends Proxy
-    implements Serializable<FunctionProxy>, Function {
+class FunctionProxy extends Proxy<FunctionProxy> implements Function {
   final js.JsFunction _jsFunction;
   final _thisArg;
 

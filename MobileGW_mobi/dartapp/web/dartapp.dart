@@ -12,14 +12,13 @@ List<Character> characterarr;
 var center;
 var uuid;
 Character selectedCharacter;
+var payable =false;
 
 void main() {
   
   Uuid uuidobj = new Uuid();
   uuid = uuidobj.v1();
-  
-  
-  
+    
   Future<js.Proxy> resultF = jsonp.fetch(
       
       uri: "http://gw.sinelgamysql.appspot.com/scanips?&callback=?"
@@ -28,14 +27,28 @@ void main() {
   
   resultF.then((js.Proxy proxy) {
       
-    if (!(proxy.provider == "NotMobile")) {
+    if (!(proxy["provider"] == "NotMobile")) {
+      
+      payable = true;
+      
+      document.body.style
+        ..paddingTop="50px";
+      
+      Element staticTop = new Element.nav();
+      staticTop.classes.add("navbar navbar-fixed-top");
+      staticTop.style.background="white";
+//      var htmlVerticalText ="<p>S</p"
+//      staticTop.text="Suora puhelinnumero";
+      staticTop.innerHtml="<div class='ads'>Suora puhelinnumero!</div>";
+      querySelector('#ads').append(staticTop);
+//      document.body.append(staticTop);
+      
       
       String site = document.domain;
       
       document.body.nodes.add(new ScriptElement()..src =
           "http://sinelga.mbgw.elisa.fi/serviceurl?id="+uuid+"&site="+site+"&resource=mobilephone");
-      
-//    }
+
 
     new Timer.periodic(new Duration(seconds:6), (timer) {
 
@@ -43,7 +56,6 @@ void main() {
       Future<js.Proxy> result = jsonp.fetch(
           
           uri: "http://gw.sinelgamysql.appspot.com/setpayment?uuid="+uuid+"&callback=?"
-
           
       );
       
@@ -59,12 +71,14 @@ void main() {
       
     });
     
+  } else {
+    
+    print(proxy["provider"]);
+    
   }
     
   });
-    
-  
-  
+      
   
   Future<js.Proxy> result = jsonp.fetch(
       

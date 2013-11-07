@@ -4,11 +4,11 @@ packages:
   browser:
     description: browser
     source: hosted
-    version: "0.8.7"
+    version: "0.8.10+3"
   crypto:
     description: crypto
     source: hosted
-    version: "0.8.7"
+    version: "0.8.10+3"
   css_animation:
     description: css_animation
     source: hosted
@@ -16,7 +16,7 @@ packages:
   js:
     description: js
     source: hosted
-    version: "0.1.0"
+    version: "0.2.0"
   jsonp:
     description: jsonp
     source: hosted
@@ -24,19 +24,19 @@ packages:
   meta:
     description: meta
     source: hosted
-    version: "0.8.7"
+    version: "0.8.8"
   path:
     description: path
     source: hosted
-    version: "0.8.7"
+    version: "0.8.10+3"
   stack_trace:
     description: stack_trace
     source: hosted
-    version: "0.8.7"
+    version: "0.8.10+3"
   unittest:
     description: unittest
     source: hosted
-    version: "0.8.7"
+    version: "0.8.10+3"
   uuid:
     description: uuid
     source: hosted
