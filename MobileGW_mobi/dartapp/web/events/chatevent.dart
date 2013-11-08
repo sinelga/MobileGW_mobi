@@ -7,7 +7,6 @@ import 'dart:async';
 import "package:js/js.dart" as js;
 import "package:jsonp/jsonp.dart" as jsonp;
 import 'chatarriveevent.dart' as chatarriveevent;
-//import 'package:animation/animation.dart';
 import 'package:css_animation/css_animation.dart';
 
 ask(Event e,String uuid,Character character,InputElement ask){

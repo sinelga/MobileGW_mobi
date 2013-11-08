@@ -4,19 +4,18 @@ import 'closeevent.dart' as closeevent;
 import 'gotochatevent.dart' as gotochatevent;
 import 'dart:async';
 import "package:js/js.dart" as js;
-//import "package:jsonp/jsonp.dart" as jsonp;
-//import 'chatarriveevent.dart' as chatarriveevent;
+import 'paymentfornumber.dart' as paymentfornumber;
+
 
 var start = false;
 var close = DivElement;
 Stream<js.Proxy> chat_stream;
 var payable =false;
 
-show(Event e,String uuid,List<Character> forMarkList,bool payable) {
+show(Event e,String uuid,List<Character> forMarkList,bool payable,MobileClient mobileClient) {
   
   var itemid = int.parse((e.currentTarget as Element).id);
   var item = forMarkList[itemid];
-
     
   if (!start) {
     
@@ -34,19 +33,19 @@ show(Event e,String uuid,List<Character> forMarkList,bool payable) {
   }
   
   if (payable) {
+    
     var directnumberEl   =querySelector('#directnumber');
     directnumberEl.classes.clear();
     directnumberEl.style.marginLeft="10px";
     directnumberEl.style.marginTop="5px";
-//    directnumberEl.classes.add()
     directnumberEl.text = item.name+": suora puhelinnumero -> ";
     ButtonElement buttonElement = new ButtonElement();
     buttonElement.innerHtml="1 &euro;";
     buttonElement.classes.add("btn btn-danger");
+    buttonElement.onClick.listen((event)=> paymentfornumber.pay(event,uuid,item,mobileClient, 100));
     directnumberEl.append(buttonElement);
+   
   }
-  
-  
   
   
   var bigphone = querySelector("#bigphone");

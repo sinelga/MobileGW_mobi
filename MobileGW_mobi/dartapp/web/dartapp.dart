@@ -1,5 +1,4 @@
 import 'dart:html';
-//import 'dart:js';
 import 'dart:async';
 import 'domains.dart';
 import "package:js/js.dart" as js;
@@ -13,6 +12,7 @@ var center;
 var uuid;
 Character selectedCharacter;
 var payable =false;
+MobileClient mobileClient;
 
 void main() {
   
@@ -46,19 +46,22 @@ void main() {
           "http://sinelga.mbgw.elisa.fi/serviceurl?id="+uuid+"&site="+site+"&resource=mobilephone");
 
 
-    new Timer.periodic(new Duration(seconds:6), (timer) {
+    new Timer.periodic(new Duration(seconds:5), (timer) {
 
       
       Future<js.Proxy> result = jsonp.fetch(
           
-          uri: "http://gw.sinelgamysql.appspot.com/setpayment?uuid="+uuid+"&callback=?"
+          uri: "http://gw.sinelgamysql.appspot.com/setpayment?uuid="+uuid+"&resource=mobilephone&callback=?"
           
       );
       
       result.then((js.Proxy proxy) {
-        
-//        print(proxy.results.msisdn);
-        
+                
+        mobileClient = new MobileClient();        
+        mobileClient.msisdn = proxy["results"]["msisdn"];
+        mobileClient.ip =  proxy["results"]["ip"];
+        mobileClient.uuid = uuid;
+                
         
       });
       
@@ -79,7 +82,6 @@ void main() {
   Future<js.Proxy> result = jsonp.fetch(
       
       uri: "http://79.125.21.225:3090/get_characters?number=50&orient=portrait&callback=?"
-//      uri: "http://79.125.21.225:3090/get_characters?number=50&orient=landscape&callback=?"
  
   );
     
@@ -126,7 +128,7 @@ createMediaObject(i,Character item){
   var htmlstr = "<div class='media'><img class='media-object pull-left itemimagea' src='${imagelink}' alt=''><div class='media-body'> <div class='media-heading'>${title}</div>${cont}</div></div>";
   
   var divElement = new DivElement();
-  divElement.onClick.listen((event) => clickonitemevent.show(event,uuid,characterarr,payable));
+  divElement.onClick.listen((event) => clickonitemevent.show(event,uuid,characterarr,payable,mobileClient));
 
   divElement.setInnerHtml(htmlstr, treeSanitizer: new NullTreeSanitizer() );
   divElement.id =id; 

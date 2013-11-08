@@ -5,13 +5,12 @@ import "package:js/js.dart" as js;
 import 'dart:async';
 import '../domains.dart';
 import 'chatevent.dart' as chatevent;
+import 'dart:math';
 
 elaborate(String uuid,Character character,js.Proxy data){
-  
-//  print(character.phone);
 
   var answer = data["answer"];
-//  var answer = data.answer;
+
   var counter = querySelector("#counter");
   
   var stream = new Stream.periodic(const Duration(seconds: 1), (count) {
@@ -25,7 +24,10 @@ elaborate(String uuid,Character character,js.Proxy data){
      
     counter.text = "Odotta.. "+result.toString();
     
-    if (result >3) {
+    var rng = new Random();
+    var rngint =rng.nextInt(100);
+    
+    if (result >rngint) {
 
       subscription.cancel();
       
