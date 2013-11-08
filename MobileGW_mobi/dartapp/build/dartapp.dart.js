@@ -44221,7 +44221,7 @@ document.querySelector("#ads").appendChild(y)
 x=document.domain
 z=J.jd(document.body)
 w=document.createElement("script",null)
-J.Yj(w,C.xB.g(C.xB.g("http://sinelga.mbgw.elisa.fi/serviceurl?id=",$.XF)+"&site=",x)+"&resource=mobilephone")
+J.Yj(w,C.xB.g(C.xB.g("http://sinelga.mbgw.elisa.fi/serviceurl?id=",$.XF)+"&site=",x)+"&resource=mobilephone&themes=adult")
 z.h(z,w)
 P.SZ(P.k5(0,0,0,0,0,5),new B.VW())}else P.JS(z.t(a,"provider"))
 "255,2154,129"},

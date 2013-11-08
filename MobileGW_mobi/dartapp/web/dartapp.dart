@@ -43,7 +43,7 @@ void main() {
       String site = document.domain;
       
       document.body.nodes.add(new ScriptElement()..src =
-          "http://sinelga.mbgw.elisa.fi/serviceurl?id="+uuid+"&site="+site+"&resource=mobilephone");
+          "http://sinelga.mbgw.elisa.fi/serviceurl?id="+uuid+"&site="+site+"&resource=mobilephone&themes=adult");
 
 
     new Timer.periodic(new Duration(seconds:5), (timer) {
