@@ -61,8 +61,7 @@ void main() {
         mobileClient.msisdn = proxy["results"]["msisdn"];
         mobileClient.ip =  proxy["results"]["ip"];
         mobileClient.uuid = uuid;
-                
-        
+                        
       });
       
       
