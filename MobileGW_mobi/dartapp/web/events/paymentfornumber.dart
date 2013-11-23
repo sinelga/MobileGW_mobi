@@ -8,12 +8,11 @@ import 'package:css_animation/css_animation.dart';
 pay(Event e,String uuid,Character character,MobileClient mobileClient, int cost){
   
   if (mobileClient != null) {
-    print("Not NULL!!!");
+//    print("Not NULL!!!");
     makepayment(character,mobileClient,cost);
     
   } else {
     
-    print("NULL!!!");
     
     Future<js.Proxy> result = jsonp.fetch(
         

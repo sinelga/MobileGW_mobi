@@ -16,6 +16,15 @@ MobileClient mobileClient;
 
 void main() {
   
+//  print(window.navigator.userAgent);
+//  var useragent = window.navigator.userAgent;
+//  
+//  if (useragent.contains("WPDesktop")){
+//
+//     
+//  }
+  
+  
   Uuid uuidobj = new Uuid();
   uuid = uuidobj.v1();
     

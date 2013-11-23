@@ -15,6 +15,9 @@ body {
   width: device-width;
 }
 */
+@-ms-viewport{width:auto!important}
+
+
 .googlefonttitle {
   font-family: 'Permanent Marker', cursive;
   font-size: 140%;
