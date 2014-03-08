@@ -4,7 +4,7 @@ import 'domains.dart';
 import "package:js/js.dart" as js;
 import "package:jsonp/jsonp.dart" as jsonp;
 import 'events/clickonitemevent.dart' as clickonitemevent;
-import 'package:uuid/uuid.dart';
+import 'package:uuid/uuid_client.dart';
 
 
 List<Character> characterarr;
@@ -15,16 +15,7 @@ var payable =false;
 MobileClient mobileClient;
 
 void main() {
-  
-//  print(window.navigator.userAgent);
-//  var useragent = window.navigator.userAgent;
-//  
-//  if (useragent.contains("WPDesktop")){
-//
-//     
-//  }
-  
-  
+    
   Uuid uuidobj = new Uuid();
   uuid = uuidobj.v1();
     
@@ -36,7 +27,7 @@ void main() {
   
   resultF.then((js.Proxy proxy) {
       
-    if (!(proxy["provider"] == "NotMobile")) {
+    if ((proxy["provider"] == "MobileElisa")) {
       
       payable = true;
       
@@ -72,21 +63,30 @@ void main() {
         mobileClient.uuid = uuid;
                         
       });
-      
-      
+        
       timer.cancel(); // cancel the timer
       
     });
     
-  } else {
+  } else if ((proxy["provider"] == "MobileSonera")) {
     
-    print(proxy["provider"]);
+//    print(proxy["provider"]);
+    Future<js.Proxy> result = jsonp.fetch(
+        uri: "http://ippayment.info/sonera?callback=?"
+        );
+    result.then((js.Proxy proxy) {
+
+      print(proxy["msisdn"]);
+//      payable = true;
+//           this.hidden = false;      
+//          display(proxy);
+      
+    });    
     
   }
     
   });
-      
-  
+       
   Future<js.Proxy> result = jsonp.fetch(
       
       uri: "http://79.125.21.225:3090/get_characters?number=50&orient=portrait&callback=?"

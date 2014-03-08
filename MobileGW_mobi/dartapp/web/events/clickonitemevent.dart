@@ -1,3 +1,5 @@
+library clickonitemevent; 
+
 import '../domains.dart';
 import 'dart:html';
 import 'closeevent.dart' as closeevent;
@@ -46,7 +48,6 @@ show(Event e,String uuid,List<Character> forMarkList,bool payable,MobileClient m
     directnumberEl.append(buttonElement);
    
   }
-  
   
   var bigphone = querySelector("#bigphone");
   var seleteditemplace = querySelector("#seleteditem");
