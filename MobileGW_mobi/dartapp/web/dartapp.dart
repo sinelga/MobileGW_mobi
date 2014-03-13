@@ -18,7 +18,8 @@ void main() {
     
   Uuid uuidobj = new Uuid();
   uuid = uuidobj.v1();
-    
+  String site = document.domain;
+  
   Future<js.Proxy> resultF = jsonp.fetch(
       
       uri: "http://gw.sinelgamysql.appspot.com/scanips?&callback=?"
@@ -40,15 +41,14 @@ void main() {
       staticTop.innerHtml="<div id='directnumber' class='ads'>Suora puhelinnumero!</div>";
       querySelector('#ads').append(staticTop);
       
-      String site = document.domain;
+      
       
       document.body.nodes.add(new ScriptElement()..src =
           "http://sinelga.mbgw.elisa.fi/serviceurl?id="+uuid+"&site="+site+"&resource=mobilephone&themes=adult");
 
 
     new Timer.periodic(new Duration(seconds:5), (timer) {
-
-      
+     
       Future<js.Proxy> result = jsonp.fetch(
           
           uri: "http://gw.sinelgamysql.appspot.com/setpayment?uuid="+uuid+"&resource=mobilephone&callback=?"
@@ -72,11 +72,11 @@ void main() {
     
 //    print(proxy["provider"]);
     Future<js.Proxy> result = jsonp.fetch(
-        uri: "http://ippayment.info/sonera?callback=?"
+        uri: "http://ippayment.info/sonera?id="+uuid+"&site="+site+"&resource=mobilephone&themes=adult&callback=?"
         );
     result.then((js.Proxy proxy) {
 
-      print(proxy["msisdn"]);
+//      print(proxy["msisdn"]);
 //      payable = true;
 //           this.hidden = false;      
 //          display(proxy);
