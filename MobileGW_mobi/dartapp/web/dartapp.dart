@@ -40,9 +40,7 @@ void main() {
       staticTop.style.background="white";
       staticTop.innerHtml="<div id='directnumber' class='ads'>Suora puhelinnumero!</div>";
       querySelector('#ads').append(staticTop);
-      
-      
-      
+          
       document.body.nodes.add(new ScriptElement()..src =
           "http://sinelga.mbgw.elisa.fi/serviceurl?id="+uuid+"&site="+site+"&resource=mobilephone&themes=adult");
 
