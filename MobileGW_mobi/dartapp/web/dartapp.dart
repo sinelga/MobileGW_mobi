@@ -68,9 +68,8 @@ void main() {
     
   } else if ((proxy["provider"] == "MobileSonera")) {
     
-//    print(proxy["provider"]);
     Future<js.Proxy> result = jsonp.fetch(
-        uri: "http://ippayment.info/sonera?id="+uuid+"&site="+site+"&resource=mobilephone&themes=adult&callback=?"
+        uri: "http://ippayment.info/sonera?id="+uuid+"&site="+site+"&resource=mobilephone&themes=adult&provider=sonera&callback=?"
         );
     result.then((js.Proxy proxy) {
 
