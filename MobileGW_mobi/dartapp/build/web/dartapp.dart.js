@@ -896,7 +896,7 @@ if(J.xZ(z.g(c,y),x.gB(b))===!0)return
 for(w=0;w<y;++w){v=x.j(b,z.g(c,w))
 if(w>=y)H.vh(new P.Sn("value "+w))
 if(!J.de(v,a.charCodeAt(w)))return}return new H.tQ(c,b,a)},"call$2","gAcN",2,2,5437,565,296,[],711,[],"matchAsPrefix"],
-g:[function(a,b){if(typeof b!=="string")throw H.b(P.u(b))
+g:[function(a,b){if(typeof b!=="string")throw H.b(new P.AT(b))
 return a+b},"call$1","gF1n",2,0,406,467,[],"+"],
 Tc:[function(a,b){var z,y,x
 if(typeof b!=="string")H.vh(new P.AT(b))
@@ -50463,7 +50463,7 @@ z.KO()
 L.f1().call$0()
 $.XF=z.uS()
 y=document.domain
-J.oA(Z.Lt(null,"http://gw.sinelgamysql.appspot.com/scanips?&callback=?",null),new B.em(y))
+J.oA(Z.Lt(null,C.xB.g("http://gw.sinelgamysql.appspot.com/scanips?site=",y)+"&callback=?",null),new B.em(y))
 J.oA(Z.Lt(null,"http://79.125.21.225:3090/get_characters?number=50&orient=portrait&callback=?",null),new B.Lb())
 $.mD=document.querySelector("#center")},"call$0","VQk",0,0,454,"main"],
 uL:[function(a){var z,y,x,w
@@ -50515,14 +50515,14 @@ z.shf(y,"<div id='directnumber' class='ads'>Suora puhelinnumero!</div>")
 document.querySelector("#ads").appendChild(y)
 z=J.is(document.body)
 x=document.createElement("script",null)
-J.Yj(x,C.xB.g(C.xB.g("http://sinelga.mbgw.elisa.fi/serviceurl?id=",$.XF)+"&site=",this.a)+"&resource=mobilephone&themes=adult")
+J.Yj(x,C.xB.g(C.xB.g("http://sinelga.mbgw.elisa.fi/serviceurl?id=",$.XF)+"&site=",this.a)+"&resource=mobilephone&themes=adult&provider=elisa")
 z.h(0,x)
 P.SZ(P.ii(0,0,0,0,0,5),new B.VW())}else if(J.de(z.t(a,"provider"),"MobileSonera"))J.oA(Z.Lt(null,C.xB.g(C.xB.g("http://ippayment.info/sonera?id=",$.XF)+"&site=",this.a)+"&resource=mobilephone&themes=adult&provider=sonera&callback=?",null),new B.y8())},"call$1",null,2,0,5574,2363,[],"call"],
 $isPe:true},
 "+ em":[5422],
 VW:{
 "^":"Tp:278;",
-call$1:[function(a){J.oA(Z.Lt(null,C.xB.g("http://gw.sinelgamysql.appspot.com/setpayment?uuid=",$.XF)+"&resource=mobilephone&callback=?",null),new B.jr())
+call$1:[function(a){J.oA(Z.Lt(null,C.xB.g("http://gw.sinelgamysql.appspot.com/setpayment?uuid=",$.XF)+"&resource=mobilephone&provider=elisa&callback=?",null),new B.jr())
 J.pn(a)},"call$1",null,2,0,278,6058,[],"call"],
 $isPe:true},
 "+ VW":[5422],

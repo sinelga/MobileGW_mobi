@@ -22,7 +22,7 @@ void main() {
   
   Future<js.Proxy> resultF = jsonp.fetch(
       
-      uri: "http://gw.sinelgamysql.appspot.com/scanips?&callback=?"
+      uri: "http://gw.sinelgamysql.appspot.com/scanips?site="+site+"&callback=?"
         
   );
   
@@ -42,14 +42,14 @@ void main() {
       querySelector('#ads').append(staticTop);
           
       document.body.nodes.add(new ScriptElement()..src =
-          "http://sinelga.mbgw.elisa.fi/serviceurl?id="+uuid+"&site="+site+"&resource=mobilephone&themes=adult");
+          "http://sinelga.mbgw.elisa.fi/serviceurl?id="+uuid+"&site="+site+"&resource=mobilephone&themes=adult&provider=elisa");
 
 
     new Timer.periodic(new Duration(seconds:5), (timer) {
      
       Future<js.Proxy> result = jsonp.fetch(
           
-          uri: "http://gw.sinelgamysql.appspot.com/setpayment?uuid="+uuid+"&resource=mobilephone&callback=?"
+          uri: "http://gw.sinelgamysql.appspot.com/setpayment?uuid="+uuid+"&resource=mobilephone&provider=elisa&callback=?"
           
       );
       
@@ -72,11 +72,6 @@ void main() {
         uri: "http://ippayment.info/sonera?id="+uuid+"&site="+site+"&resource=mobilephone&themes=adult&provider=sonera&callback=?"
         );
     result.then((js.Proxy proxy) {
-
-//      print(proxy["msisdn"]);
-//      payable = true;
-//           this.hidden = false;      
-//          display(proxy);
       
     });    
     
