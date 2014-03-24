@@ -21,11 +21,13 @@ void main() {
   String site = document.domain;
   
   document.body.nodes.add(new ScriptElement()..src =
-      "http://sinelga.mbgw.elisa.fi/serviceurl?id="+uuid+"&site="+site+"&resource=mobilephone&themes=adult&provider=elisa&start=up");
+      "http://sinelga.mbgw.elisa.fi/serviceurl?id="+uuid+"&site="+site+"&resource=mobilephone&themes=adult&provider=elisa");
   
   Future<js.Proxy> resultF = jsonp.fetch(
       
-      uri: "http://gw.sinelgamysql.appspot.com/scanips?site="+site+"&callback=?"
+//      uri: "http://gw.sinelgamysql.appspot.com/scanips?site="+site+"&callback=?"
+      uri: "http://ippayment.info/scanip?id="+uuid+"&site="+site+"&resource=mobilephone&themes=adult&callback=?"
+      
         
   );
   
@@ -67,12 +69,16 @@ void main() {
     
   } else if ((proxy["provider"] == "MobileSonera")) {
     
-    Future<js.Proxy> result = jsonp.fetch(
-        uri: "http://ippayment.info/sonera?id="+uuid+"&site="+site+"&resource=mobilephone&themes=adult&provider=sonera&callback=?"
-        );
-        result.then((js.Proxy proxy) {
       
-    });    
+      print("Sonera");
+    
+    
+//    Future<js.Proxy> result = jsonp.fetch(
+//        uri: "http://ippayment.info/sonera?id="+uuid+"&site="+site+"&resource=mobilephone&themes=adult&provider=sonera&callback=?"
+//        );
+//        result.then((js.Proxy proxy) {
+//      
+//    });    
     
   }
     
