@@ -12,7 +12,7 @@ packages:
   cipher:
     description: cipher
     source: hosted
-    version: "0.6.0"
+    version: "0.7.1"
   crypto:
     description: crypto
     source: hosted
@@ -20,7 +20,7 @@ packages:
   css_animation:
     description: css_animation
     source: hosted
-    version: "0.1.6"
+    version: "0.1.7"
   fixnum:
     description: fixnum
     source: hosted
@@ -36,4 +36,4 @@ packages:
   uuid:
     description: uuid
     source: hosted
-    version: "0.3.0"
+    version: "0.3.2"
