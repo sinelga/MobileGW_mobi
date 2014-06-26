@@ -15,9 +15,13 @@ abstract class Link extends FileSystemEntity {
   factory Link(String path) => new _Link(path);
 
   /**
-   * Create a Lint object from a URI.
+   * Creates a [Link] object.
    *
-   * If [uri] cannot reference a link this throws [UnsupportedError].
+   * If [path] is a relative path, it will be interpreted relative to the
+   * current working directory (see [Directory.current]), when used.
+   *
+   * If [path] is an absolute path, it will be immune to changes to the
+   * current working directory.
    */
   factory Link.fromUri(Uri uri) => new Link(uri.toFilePath());
 
@@ -163,7 +167,7 @@ class _Link extends FileSystemEntity implements Link {
   FileStat statSync() => FileStat.statSync(path);
 
   Future<Link> create(String target, {bool recursive: false}) {
-    if (Platform.operatingSystem == 'windows') {
+    if (Platform.isWindows) {
       target = _makeWindowsLinkTarget(target);
     }
     var result = recursive ? parent.create(recursive: true)
@@ -183,7 +187,7 @@ class _Link extends FileSystemEntity implements Link {
     if (recursive) {
       parent.createSync(recursive: true);
     }
-    if (Platform.operatingSystem == 'windows') {
+    if (Platform.isWindows) {
       target = _makeWindowsLinkTarget(target);
     }
     var result = _File._createLink(path, target);

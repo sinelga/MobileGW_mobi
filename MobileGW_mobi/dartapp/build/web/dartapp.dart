@@ -16,6 +16,7 @@ var uuid;
 Character selectedCharacter;
 var payable =false;
 MobileClient mobileClient;
+var provider;
 
 void main() {
     
@@ -28,15 +29,16 @@ void main() {
   
   Future<js.Proxy> resultF = jsonp.fetch(
       
-//      uri: "http://gw.sinelgamysql.appspot.com/scanips?site="+site+"&callback=?"
       uri: "http://ippayment.info/scanip?id="+uuid+"&site="+site+"&resource=mobilephone&themes=adult&callback=?"
       
         
   );
   
   resultF.then((js.Proxy proxy) {
+    
+    provider = proxy["provider"];
       
-    if ((proxy["provider"] == "MobileElisa")) {
+    if (provider == "MobileElisa") {
       
       payable = true;
       
@@ -70,19 +72,20 @@ void main() {
       
     });
     
-  } else if ((proxy["provider"] == "MobileSonera")) {
+  } else if (provider == "MobileSonera") {
     
+      payable = true;
       
-      print("Sonera");
+      document.body.style
+        ..paddingTop="50px";
+      
+      Element staticTop = new Element.nav();
+      staticTop.classes.add("navbar navbar-fixed-top");
+      staticTop.style.background="white";
+      staticTop.innerHtml="<div id='directnumber' class='ads'>Suora puhelinnumero!</div>";
+      querySelector('#ads').append(staticTop);
     
-    
-//    Future<js.Proxy> result = jsonp.fetch(
-//        uri: "http://ippayment.info/sonera?id="+uuid+"&site="+site+"&resource=mobilephone&themes=adult&provider=sonera&callback=?"
-//        );
-//        result.then((js.Proxy proxy) {
-//      
-//    });    
-    
+        
   }
     
   });
@@ -136,7 +139,7 @@ createMediaObject(i,Character item){
   var htmlstr = "<div class='media'><img class='media-object pull-left itemimagea' src='${imagelink}' alt=''><div class='media-body'> <div class='media-heading'>${title}</div>${cont}</div></div>";
   
   var divElement = new DivElement();
-  divElement.onClick.listen((event) => clickonitemevent.show(event,uuid,characterarr,payable,mobileClient));
+  divElement.onClick.listen((event) => clickonitemevent.show(event,uuid,characterarr,payable,mobileClient,provider));
 
   divElement.setInnerHtml(htmlstr, treeSanitizer: new NullTreeSanitizer() );
   divElement.id =id; 

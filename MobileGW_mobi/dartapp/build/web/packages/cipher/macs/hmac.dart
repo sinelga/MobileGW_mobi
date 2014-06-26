@@ -1,13 +1,15 @@
-// Copyright (c) 2013, Iván Zaera Avellón - izaera@gmail.com
-// Use of this source code is governed by a LGPL v3 license.
-// See the LICENSE file for more information.
+// Copyright (c) 2013-present, Iván Zaera Avellón - izaera@gmail.com
+
+// This library is dually licensed under LGPL 3 and MPL 2.0. See file LICENSE for more information.
+
+// This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of
+// the MPL was not distributed with this file, you can obtain one at http://mozilla.org/MPL/2.0/.
 
 library cipher.macs.hmac;
 
 import "dart:typed_data";
 
 import "package:cipher/api.dart";
-import "package:cipher/api/ufixnum.dart";
 import "package:cipher/params/key_parameter.dart";
 import "package:cipher/macs/base_mac.dart";
 
@@ -18,8 +20,8 @@ import "package:cipher/macs/base_mac.dart";
  */
 class HMac extends BaseMac {
 
-    static final _IPAD = new Uint8(0x36);
-    static final _OPAD = new Uint8(0x5C);
+    static final _IPAD = 0x36;
+    static final _OPAD = 0x5C;
 
     Digest _digest;
     int _digestSize;
@@ -91,9 +93,9 @@ class HMac extends BaseMac {
       return len;
     }
 
-    void _xorPad(Uint8List pad, int len, Uint8 n) {
+    void _xorPad(Uint8List pad, int len, int n) {
       for( var i=0 ; i<len ; i++ ) {
-        pad[i] ^= n.toInt();
+        pad[i] ^= n;
       }
     }
 }

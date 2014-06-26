@@ -126,7 +126,7 @@ Set<String> doNotChangeLengthSelectorsSet = new Set<String>.from(
   ]);
 
 
-class ListTracerVisitor extends TracerVisitor {
+class ListTracerVisitor extends TracerVisitor<ListTypeInformation> {
   // The [List] of found assignments to the list.
   List<TypeInformation> assignments = <TypeInformation>[];
   bool callsGrowableMethod = false;
@@ -172,7 +172,7 @@ class ListTracerVisitor extends TracerVisitor {
     String selectorName = selector.name;
     if (currentUser == info.receiver) {
       if (!okListSelectorsSet.contains(selectorName)) {
-        if (selector.isCall()) {
+        if (selector.isCall) {
           int positionalLength = info.arguments.positional.length;
           if (selectorName == 'add') {
             if (positionalLength == 1) {
@@ -186,9 +186,9 @@ class ListTracerVisitor extends TracerVisitor {
             bailout('Used in a not-ok selector');
             return;
           }
-        } else if (selector.isIndexSet()) {
+        } else if (selector.isIndexSet) {
           assignments.add(info.arguments.positional[1]);
-        } else if (!selector.isIndex()) {
+        } else if (!selector.isIndex) {
           bailout('Used in a not-ok selector');
           return;
         }
@@ -196,12 +196,12 @@ class ListTracerVisitor extends TracerVisitor {
       if (!doNotChangeLengthSelectorsSet.contains(selectorName)) {
         callsGrowableMethod = true;
       }
-      if (selectorName == 'length' && selector.isSetter()) {
+      if (selectorName == 'length' && selector.isSetter) {
         callsGrowableMethod = true;
         assignments.add(inferrer.types.nullType);
       }
-    } else if (selector.isCall() &&
-               !info.targets.every((element) => element.isFunction())) {
+    } else if (selector.isCall &&
+               !info.targets.every((element) => element.isFunction)) {
       bailout('Passed to a closure');
       return;
     }

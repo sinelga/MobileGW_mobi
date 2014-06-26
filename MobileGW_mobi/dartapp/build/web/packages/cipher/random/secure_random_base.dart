@@ -1,6 +1,9 @@
-// Copyright (c) 2013, Iván Zaera Avellón - izaera@gmail.com
-// Use of this source code is governed by a LGPL v3 license.
-// See the LICENSE file for more information.
+// Copyright (c) 2013-present, Iván Zaera Avellón - izaera@gmail.com
+
+// This library is dually licensed under LGPL 3 and MPL 2.0. See file LICENSE for more information.
+
+// This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of
+// the MPL was not distributed with this file, you can obtain one at http://mozilla.org/MPL/2.0/.
 
 library cipher.random.secure_random_base;
 
@@ -8,15 +11,18 @@ import "dart:typed_data";
 
 import "package:bignum/bignum.dart";
 import "package:cipher/api.dart";
-import "package:cipher/api/ufixnum.dart";
+import "package:cipher/src/ufixnum.dart";
 
-/// An utility base implementation of [SecureRandom] so that only [nextUint8] method needs to be implemented.
+/**
+ * An utility base implementation of [SecureRandom] so that only [nextUint8] method needs to be
+ * implemented.
+ */
 abstract class SecureRandomBase implements SecureRandom {
 
   int nextUint16() {
     var b0 = nextUint8();
     var b1 = nextUint8();
-    return Uint16.clip( (b1<<8) | b0 );
+    return clip16((b1 << 8) | b0);
   }
 
   int nextUint32() {
@@ -24,7 +30,7 @@ abstract class SecureRandomBase implements SecureRandom {
     var b1 = nextUint8();
     var b2 = nextUint8();
     var b3 = nextUint8();
-    return Uint32.clip( (b3<<24) | (b2<<16) | (b1<<8) | b0 );
+    return clip32( (b3<<24) | (b2<<16) | (b1<<8) | b0 );
   }
 
   BigInteger nextBigInteger( int bitLength ) {

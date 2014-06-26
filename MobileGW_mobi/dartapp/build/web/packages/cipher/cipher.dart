@@ -1,6 +1,9 @@
-// Copyright (c) 2013, Iván Zaera Avellón - izaera@gmail.com
-// Use of this source code is governed by a LGPL v3 license.
-// See the LICENSE file for more information.
+// Copyright (c) 2013-present, Iván Zaera Avellón - izaera@gmail.com
+
+// This library is dually licensed under LGPL 3 and MPL 2.0. See file LICENSE for more information.
+
+// This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of
+// the MPL was not distributed with this file, you can obtain one at http://mozilla.org/MPL/2.0/.
 
 /**
  * This is the main entry point to the cipher library API. It includes libraries [cipher.api] (which comprises the whole API
@@ -12,7 +15,7 @@ library cipher;
 export "package:cipher/api.dart";
 export "package:cipher/api/ecc.dart";
 export "package:cipher/api/rsa.dart";
-export "package:cipher/api/ufixnum.dart";
+//export "package:cipher/api/ufixnum.dart";
 
 export 'package:cipher/params/asymmetric_key_parameter.dart';
 export 'package:cipher/params/key_parameter.dart';

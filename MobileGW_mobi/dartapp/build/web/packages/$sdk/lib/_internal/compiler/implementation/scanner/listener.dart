@@ -544,63 +544,108 @@ class Listener {
   }
 
   Token expected(String string, Token token) {
-    error("expected '$string', but got '${token.value}'", token);
+    if (token is ErrorToken) {
+      reportErrorToken(token);
+    } else {
+      error("expected '$string', but got '${token.value}'", token);
+    }
     return skipToEof(token);
   }
 
+  Token synthesizeIdentifier(Token token) {
+    Token synthesizedToken =
+        new StringToken.fromString(IDENTIFIER_INFO, '?', token.charOffset);
+    synthesizedToken.next = token.next;
+    return synthesizedToken;
+  }
+
   Token expectedIdentifier(Token token) {
-    error("expected identifier, but got '${token.value}'", token);
+    if (token is ErrorToken) {
+      reportErrorToken(token);
+    } else {
+      error("expected identifier, but got '${token.value}'", token);
+    }
     return skipToEof(token);
   }
 
   Token expectedType(Token token) {
-    error("expected a type, but got '${token.value}'", token);
+    if (token is ErrorToken) {
+      reportErrorToken(token);
+    } else {
+      error("expected a type, but got '${token.value}'", token);
+    }
     return skipToEof(token);
   }
 
   Token expectedExpression(Token token) {
-    String message;
-    if (token.info == BAD_INPUT_INFO) {
-      message = token.value;
+    if (token is ErrorToken) {
+      reportErrorToken(token);
     } else {
-      message = "expected an expression, but got '${token.value}'";
+      error("expected an expression, but got '${token.value}'", token);
     }
-    error(message, token);
     return skipToEof(token);
   }
 
   Token unexpected(Token token) {
-    error("unexpected token '${token.value}'", token);
+    if (token is ErrorToken) {
+      reportErrorToken(token);
+    } else {
+      error("unexpected token '${token.value}'", token);
+    }
     return skipToEof(token);
   }
 
   Token expectedBlockToSkip(Token token) {
-    error("expected a block, but got '${token.value}'", token);
+    if (token is ErrorToken) {
+      reportErrorToken(token);
+    } else {
+      error("expected a block, but got '${token.value}'", token);
+    }
     return skipToEof(token);
   }
 
   Token expectedFunctionBody(Token token) {
-    error("expected a function body, but got '${token.value}'", token);
+    if (token is ErrorToken) {
+      reportErrorToken(token);
+    } else {
+      error("expected a function body, but got '${token.value}'", token);
+    }
     return skipToEof(token);
   }
 
   Token expectedClassBody(Token token) {
-    error("expected a class body, but got '${token.value}'", token);
+    if (token is ErrorToken) {
+      reportErrorToken(token);
+    } else {
+      error("expected a class body, but got '${token.value}'", token);
+    }
     return skipToEof(token);
   }
 
   Token expectedClassBodyToSkip(Token token) {
-    error("expected a class body, but got '${token.value}'", token);
+    if (token is ErrorToken) {
+      reportErrorToken(token);
+    } else {
+      error("expected a class body, but got '${token.value}'", token);
+    }
     return skipToEof(token);
   }
 
   Link<Token> expectedDeclaration(Token token) {
-    error("expected a declaration, but got '${token.value}'", token);
+    if (token is ErrorToken) {
+      reportErrorToken(token);
+    } else {
+      error("expected a declaration, but got '${token.value}'", token);
+    }
     return const Link<Token>();
   }
 
   Token unmatched(Token token) {
-    error("unmatched '${token.value}'", token);
+    if (token is ErrorToken) {
+      reportErrorToken(token);
+    } else {
+      error("unmatched '${token.value}'", token);
+    }
     return skipToEof(token);
   }
 
@@ -634,6 +679,68 @@ class Listener {
     }
     recoverableError(token, message);
   }
+
+  void reportErrorToken(ErrorToken token) {
+    if (token is BadInputToken) {
+      String hex = token.character.toRadixString(16);
+      if (hex.length < 4) {
+        String padding = "0000".substring(hex.length);
+        hex = "$padding$hex";
+      }
+      reportError(
+          token, MessageKind.BAD_INPUT_CHARACTER, {'characterHex': hex});
+    } else if (token is UnterminatedToken) {
+      String start = token.start;
+      MessageKind kind;
+      var arguments = const {};
+      switch (token.start) {
+        case '1e':
+          kind = MessageKind.EXPONENT_MISSING;
+          break;
+        case '"':
+        case "'":
+        case '"""':
+        case "'''":
+        case 'r"':
+        case "r'":
+        case 'r"""':
+        case "r'''":
+          kind = MessageKind.UNTERMINATED_STRING;
+          arguments = {'quote': token.start};
+          break;
+        case '0x':
+          kind = MessageKind.HEX_DIGIT_EXPECTED;
+          break;
+        case r'$':
+          kind = MessageKind.MALFORMED_STRING_LITERAL;
+          break;
+        case '/*':
+          kind = MessageKind.UNTERMINATED_COMMENT;
+          break;
+        default:
+          kind = MessageKind.UNTERMINATED_TOKEN;
+          break;
+      }
+      reportError(token, kind, arguments);
+    } else if (token is UnmatchedToken) {
+      String begin = token.begin.value;
+      String end = closeBraceFor(begin);
+      reportError(
+          token, MessageKind.UNMATCHED_TOKEN, {'begin': begin, 'end': end});
+    } else {
+      throw new SpannableAssertionFailure(token, token.assertionMessage);
+    }
+  }
+}
+
+String closeBraceFor(String openBrace) {
+  return const {
+    '(': ')',
+    '[': ']',
+    '{': '}',
+    '<': '>',
+    r'${': '}',
+  }[openBrace];
 }
 
 class ParserError {
@@ -692,7 +799,7 @@ class ElementListener extends Listener {
   bool allowLibraryTags() {
     // Library tags are only allowed in the library file itself, not
     // in sourced files.
-    LibraryElement library = compilationUnitElement.getLibrary();
+    LibraryElement library = compilationUnitElement.library;
     return !compilationUnitElement.hasMembers
       && library.entryCompilationUnit == compilationUnitElement;
   }
@@ -791,7 +898,7 @@ class ElementListener extends Listener {
     NodeList typeParameters = popNode();
     Identifier name = popNode();
     int id = idGenerator();
-    ClassElement element = new PartialClassElement(
+    PartialClassElement element = new PartialClassElement(
         name.source, beginToken, endToken, compilationUnitElement, id);
     element.nativeTagInfo = nativeTagInfo;
     pushElement(element);
@@ -958,8 +1065,12 @@ class ElementListener extends Listener {
   }
 
   Token expected(String string, Token token) {
-    reportFatalError(token,
-        "Expected '$string', but got '${token.value}'.");
+    if (token is ErrorToken) {
+      reportErrorToken(token);
+    } else {
+      reportFatalError(
+          token, "Expected '$string', but got '${token.value}'.");
+    }
     return skipToEof(token);
   }
 
@@ -968,6 +1079,9 @@ class ElementListener extends Listener {
       reportError(
           token, MessageKind.EXPECTED_IDENTIFIER_NOT_RESERVED_WORD,
           {'keyword': token.value});
+    } else if (token is ErrorToken) {
+      reportErrorToken(token);
+      return synthesizeIdentifier(token);
     } else {
       reportFatalError(token,
           "Expected identifier, but got '${token.value}'.");
@@ -976,15 +1090,20 @@ class ElementListener extends Listener {
   }
 
   Token expectedType(Token token) {
-    reportFatalError(token,
-                     "Expected a type, but got '${token.value}'.");
     pushNode(null);
-    return skipToEof(token);
+    if (token is ErrorToken) {
+      reportErrorToken(token);
+      return synthesizeIdentifier(token);
+    } else {
+      reportFatalError(
+          token, "Expected a type, but got '${token.value}'.");
+      return skipToEof(token);
+    }
   }
 
   Token expectedExpression(Token token) {
-    if (token.info == BAD_INPUT_INFO) {
-      reportError(token, MessageKind.GENERIC, {'text': token.value});
+    if (token is ErrorToken) {
+      reportErrorToken(token);
       pushNode(new ErrorExpression(token));
       return token.next;
     } else {
@@ -996,11 +1115,15 @@ class ElementListener extends Listener {
   }
 
   Token unexpected(Token token) {
-    String message = "Unexpected token '${token.value}'.";
-    if (token.info == BAD_INPUT_INFO) {
-      message = token.value;
+    if (token is ErrorToken) {
+      reportErrorToken(token);
+    } else {
+      String message = "Unexpected token '${token.value}'.";
+      if (token.info == BAD_INPUT_INFO) {
+        message = token.value;
+      }
+      reportFatalError(token, message);
     }
-    reportFatalError(token, message);
     return skipToEof(token);
   }
 
@@ -1013,15 +1136,23 @@ class ElementListener extends Listener {
   }
 
   Token expectedFunctionBody(Token token) {
-    String printString = token.value;
-    reportFatalError(token,
-                     "Expected a function body, but got '$printString'.");
+    if (token is ErrorToken) {
+      reportErrorToken(token);
+    } else {
+      String printString = token.value;
+      reportFatalError(token,
+                       "Expected a function body, but got '$printString'.");
+    }
     return skipToEof(token);
   }
 
   Token expectedClassBody(Token token) {
-    reportFatalError(token,
-                     "Expected a class body, but got '${token.value}'.");
+    if (token is ErrorToken) {
+      reportErrorToken(token);
+    } else {
+      reportFatalError(token,
+                       "Expected a class body, but got '${token.value}'.");
+    }
     return skipToEof(token);
   }
 
@@ -1034,15 +1165,29 @@ class ElementListener extends Listener {
   }
 
   Link<Token> expectedDeclaration(Token token) {
-    reportFatalError(token,
-                     "Expected a declaration, but got '${token.value}'.");
+    if (token is ErrorToken) {
+      reportErrorToken(token);
+    } else {
+      reportFatalError(token,
+                       "Expected a declaration, but got '${token.value}'.");
+    }
     return const Link<Token>();
   }
 
   Token unmatched(Token token) {
-    reportFatalError(token,
-                     "Unmatched '${token.value}'.");
-    return skipToEof(token);
+    if (token is ErrorToken) {
+      reportErrorToken(token);
+    } else {
+      String begin = token.value;
+      String end = closeBraceFor(begin);
+      reportError(
+          token, MessageKind.UNMATCHED_TOKEN, {'begin': begin, 'end': end});
+    }
+    Token next = token.next;
+    while (next is ErrorToken) {
+      next = next.next;
+    }
+    return next;
   }
 
   void recoverableError(Spannable node, String message) {
@@ -1074,7 +1219,7 @@ class ElementListener extends Listener {
     if (!allowLibraryTags()) {
       recoverableError(tag, 'Library tags not allowed here.');
     }
-    compilationUnitElement.getImplementationLibrary().addTag(tag, listener);
+    compilationUnitElement.implementationLibrary.addTag(tag, listener);
   }
 
   void pushNode(Node node) {
@@ -1351,6 +1496,8 @@ class NodeListener extends ElementListener {
   Token expectedFunctionBody(Token token) {
     if (identical(token.stringValue, 'native')) {
       return native.handleNativeFunctionBody(this, token);
+    } else if (token is ErrorToken) {
+      reportErrorToken(token);
     } else {
       reportFatalError(token,
                        "Expected a function body, but got '${token.value}'.");
@@ -1361,6 +1508,8 @@ class NodeListener extends ElementListener {
   Token expectedClassBody(Token token) {
     if (identical(token.stringValue, 'native')) {
       return native.handleNativeClassBody(this, token);
+    } else if (token is ErrorToken) {
+      reportErrorToken(token);
     } else {
       reportFatalError(token,
                        "Expected a class body, but got '${token.value}'.");
@@ -1923,47 +2072,78 @@ class NodeListener extends ElementListener {
   }
 }
 
-class PartialFunctionElement extends FunctionElementX {
-  final Token beginToken;
-  final Token getOrSet;
-  final Token endToken;
+abstract class PartialFunctionMixin implements FunctionElement {
+  FunctionExpression cachedNode;
+  Modifiers get modifiers;
+  Token beginToken;
+  Token getOrSet;
+  Token endToken;
 
   /**
    * The position is computed in the constructor using [findMyName]. Computing
    * it on demand fails in case tokens are GC'd.
    */
-  final Token _position;
+  Token _position;
 
-  PartialFunctionElement(String name,
-                         Token beginToken,
-                         this.getOrSet,
-                         this.endToken,
-                         ElementKind kind,
-                         Modifiers modifiers,
-                         Element enclosing,
-                         bool hasNoBody)
-    : super(name, kind, modifiers, enclosing, hasNoBody),
-      beginToken = beginToken,
-      _position = ElementX.findNameToken(
-          beginToken,
-          modifiers.isFactory() ||
-            identical(kind, ElementKind.GENERATIVE_CONSTRUCTOR),
-          name, enclosing.name);
+  void init(Token beginToken, Token getOrSet, Token endToken) {
+    this.beginToken = beginToken;
+    this.getOrSet = getOrSet;
+    this.endToken = endToken;
+    _position = ElementX.findNameToken(
+        beginToken,
+        modifiers.isFactory ||
+          identical(kind, ElementKind.GENERATIVE_CONSTRUCTOR),
+        name, enclosingElement.name);
+  }
+
+  FunctionExpression get node {
+    assert(invariant(this, cachedNode != null,
+        message: "Node has not been computed for $this."));
+    return cachedNode;
+  }
 
   FunctionExpression parseNode(DiagnosticListener listener) {
     if (cachedNode != null) return cachedNode;
     parseFunction(Parser p) {
-      if (isMember() && modifiers.isFactory()) {
+      if (isMember && modifiers.isFactory) {
         p.parseFactoryMethod(beginToken);
       } else {
         p.parseFunction(beginToken, getOrSet);
       }
     }
-    cachedNode = parse(listener, getCompilationUnit(), parseFunction);
+    cachedNode = parse(listener, compilationUnit, parseFunction);
     return cachedNode;
   }
 
-  Token position() => _position;
+  Token get position => _position;
+}
+
+class PartialFunctionElement extends FunctionElementX
+    with PartialFunctionMixin {
+  PartialFunctionElement(String name,
+                         Token beginToken,
+                         Token getOrSet,
+                         Token endToken,
+                         ElementKind kind,
+                         Modifiers modifiers,
+                         Element enclosing,
+                         bool hasNoBody)
+      : super(name, kind, modifiers, enclosing, hasNoBody) {
+    init(beginToken, getOrSet, endToken);
+  }
+}
+
+class PartialConstructorElement extends ConstructorElementX
+    with PartialFunctionMixin {
+  PartialConstructorElement(String name,
+                            Token beginToken,
+                            Token endToken,
+                            ElementKind kind,
+                            Modifiers modifiers,
+                            Element enclosing)
+      : super(name, kind, modifiers, enclosing) {
+    init(beginToken, null, endToken);
+  }
 }
 
 class PartialFieldList extends VariableList {
@@ -1973,23 +2153,26 @@ class PartialFieldList extends VariableList {
   PartialFieldList(Token this.beginToken,
                    Token this.endToken,
                    Modifiers modifiers)
-    : super(modifiers);
+      : super(modifiers);
 
   VariableDefinitions parseNode(Element element, DiagnosticListener listener) {
     if (definitions != null) return definitions;
-    definitions = parse(listener,
-                       element.getCompilationUnit(),
-                       (p) => p.parseVariablesDeclaration(beginToken));
-    if (!definitions.modifiers.isVar() &&
-        !definitions.modifiers.isFinal() &&
-        !definitions.modifiers.isConst() &&
-        definitions.type == null) {
-      listener.reportError(
-          definitions,
-          MessageKind.GENERIC,
-          { 'text': 'A field declaration must start with var, final, '
-                    'const, or a type annotation.' });
-    }
+    listener.withCurrentElement(element, () {
+      definitions = parse(listener,
+                          element.compilationUnit,
+                          (p) => p.parseVariablesDeclaration(beginToken));
+
+      if (!definitions.modifiers.isVar &&
+          !definitions.modifiers.isFinal &&
+          !definitions.modifiers.isConst &&
+          definitions.type == null) {
+        listener.reportError(
+            definitions,
+            MessageKind.GENERIC,
+            { 'text': 'A field declaration must start with var, final, '
+                      'const, or a type annotation.' });
+      }
+    });
     return definitions;
   }
 
@@ -2001,7 +2184,7 @@ class PartialFieldList extends VariableList {
       if (node.type != null) {
         type = compiler.resolver.resolveTypeAnnotation(element, node.type);
       } else {
-        type = compiler.types.dynamicType;
+        type = const DynamicType();
       }
     });
     assert(type != null);
@@ -2018,12 +2201,12 @@ class PartialTypedefElement extends TypedefElementX {
   Node parseNode(DiagnosticListener listener) {
     if (cachedNode != null) return cachedNode;
     cachedNode = parse(listener,
-                       getCompilationUnit(),
+                       compilationUnit,
                        (p) => p.parseTopLevelDeclaration(token));
     return cachedNode;
   }
 
-  Token position() => findMyName(token);
+  Token get position => findMyName(token);
 }
 
 /// A [MetadataAnnotation] which is constructed on demand.
@@ -2047,7 +2230,7 @@ class PartialMetadataAnnotation extends MetadataAnnotationX {
   Node parseNode(DiagnosticListener listener) {
     if (cachedNode != null) return cachedNode;
     Metadata metadata = parse(listener,
-                              annotatedElement.getCompilationUnit(),
+                              annotatedElement.compilationUnit,
                               (p) => p.parseMetadata(beginToken));
     cachedNode = metadata.expression;
     return cachedNode;

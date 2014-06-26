@@ -715,10 +715,6 @@ class BaseElement extends HtmlElement native "HTMLBaseElement" {
 class BeforeLoadEvent extends Event native "BeforeLoadEvent" {
   // To suppress missing implicit constructor warnings.
   factory BeforeLoadEvent._() { throw new UnsupportedError("Not supported"); }
-
-  @DomName('BeforeLoadEvent.url')
-  @DocsEditable()
-  final String url;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -1403,21 +1399,6 @@ class CanvasRenderingContext2D extends CanvasRenderingContext native "CanvasRend
   // To suppress missing implicit constructor warnings.
   factory CanvasRenderingContext2D._() { throw new UnsupportedError("Not supported"); }
 
-  /**
-   * The current default path of this canvas context, if there is one.
-   *
-   * ## Other resources
-   *
-   * * [Current default path]
-   * (http://www.whatwg.org/specs/web-apps/current-work/multipage/the-canvas-element.html#current-default-path)
-   * from WHATWG.
-   */
-  @DomName('CanvasRenderingContext2D.currentPath')
-  @DocsEditable()
-  // http://www.whatwg.org/specs/web-apps/current-work/multipage/the-canvas-element.html#path-objects
-  @Experimental()
-  Path currentPath;
-
   @DomName('CanvasRenderingContext2D.currentTransform')
   @DocsEditable()
   @Experimental() // untriaged
@@ -1502,23 +1483,6 @@ class CanvasRenderingContext2D extends CanvasRenderingContext native "CanvasRend
   @DocsEditable()
   String textBaseline;
 
-  @JSName('webkitBackingStorePixelRatio')
-  /**
-   * The ratio between this canvas' backing store dimensions and the canvas'
-   * logical dimensions.
-   *
-   * ## Other resources
-   *
-   * * [High DPI Canvas tutorial]
-   * (http://www.html5rocks.com/en/tutorials/canvas/hidpi/) from HTML5Rocks.
-   */
-  @DomName('CanvasRenderingContext2D.webkitBackingStorePixelRatio')
-  @DocsEditable()
-  @SupportedBrowser(SupportedBrowser.CHROME)
-  @SupportedBrowser(SupportedBrowser.SAFARI)
-  @Experimental()
-  final double backingStorePixelRatio;
-
   @JSName('arc')
   @DomName('CanvasRenderingContext2D.arc')
   @DocsEditable()
@@ -1595,19 +1559,10 @@ class CanvasRenderingContext2D extends CanvasRenderingContext native "CanvasRend
   @Experimental() // untriaged
   bool drawCustomFocusRing(Element element) native;
 
-  @DomName('CanvasRenderingContext2D.drawSystemFocusRing')
-  @DocsEditable()
-  @Experimental() // untriaged
-  void drawSystemFocusRing(Element element) native;
-
   @DomName('CanvasRenderingContext2D.ellipse')
   @DocsEditable()
   @Experimental() // untriaged
   void ellipse(num x, num y, num radiusX, num radiusY, num rotation, num startAngle, num endAngle, bool anticlockwise) native;
-
-  @DomName('CanvasRenderingContext2D.fill')
-  @DocsEditable()
-  void fill([String winding]) native;
 
   @DomName('CanvasRenderingContext2D.fillRect')
   @DocsEditable()
@@ -1732,57 +1687,6 @@ class CanvasRenderingContext2D extends CanvasRenderingContext native "CanvasRend
   @DomName('CanvasRenderingContext2D.translate')
   @DocsEditable()
   void translate(num tx, num ty) native;
-
-  @DomName('CanvasRenderingContext2D.webkitGetImageDataHD')
-  @DocsEditable()
-  @SupportedBrowser(SupportedBrowser.CHROME)
-  @SupportedBrowser(SupportedBrowser.SAFARI)
-  @Experimental()
-  @Creates('ImageData|=Object')
-  ImageData getImageDataHD(num sx, num sy, num sw, num sh) {
-    return convertNativeToDart_ImageData(_getImageDataHD_1(sx, sy, sw, sh));
-  }
-  @JSName('webkitGetImageDataHD')
-  @DomName('CanvasRenderingContext2D.webkitGetImageDataHD')
-  @DocsEditable()
-  @SupportedBrowser(SupportedBrowser.CHROME)
-  @SupportedBrowser(SupportedBrowser.SAFARI)
-  @Experimental()
-  @Creates('ImageData|=Object')
-  _getImageDataHD_1(sx, sy, sw, sh) native;
-
-  @DomName('CanvasRenderingContext2D.webkitPutImageDataHD')
-  @DocsEditable()
-  @SupportedBrowser(SupportedBrowser.CHROME)
-  @SupportedBrowser(SupportedBrowser.SAFARI)
-  @Experimental()
-  void putImageDataHD(ImageData imagedata, num dx, num dy, [num dirtyX, num dirtyY, num dirtyWidth, num dirtyHeight]) {
-    if (dirtyX == null && dirtyY == null && dirtyWidth == null && dirtyHeight == null) {
-      var imagedata_1 = convertDartToNative_ImageData(imagedata);
-      _putImageDataHD_1(imagedata_1, dx, dy);
-      return;
-    }
-    if (dirtyHeight != null && dirtyWidth != null && dirtyY != null && dirtyX != null) {
-      var imagedata_2 = convertDartToNative_ImageData(imagedata);
-      _putImageDataHD_2(imagedata_2, dx, dy, dirtyX, dirtyY, dirtyWidth, dirtyHeight);
-      return;
-    }
-    throw new ArgumentError("Incorrect number or type of arguments");
-  }
-  @JSName('webkitPutImageDataHD')
-  @DomName('CanvasRenderingContext2D.webkitPutImageDataHD')
-  @DocsEditable()
-  @SupportedBrowser(SupportedBrowser.CHROME)
-  @SupportedBrowser(SupportedBrowser.SAFARI)
-  @Experimental()
-  void _putImageDataHD_1(imagedata, dx, dy) native;
-  @JSName('webkitPutImageDataHD')
-  @DomName('CanvasRenderingContext2D.webkitPutImageDataHD')
-  @DocsEditable()
-  @SupportedBrowser(SupportedBrowser.CHROME)
-  @SupportedBrowser(SupportedBrowser.SAFARI)
-  @Experimental()
-  void _putImageDataHD_2(imagedata, dx, dy, dirtyX, dirtyY, dirtyWidth, dirtyHeight) native;
 
 
   /**
@@ -2062,6 +1966,17 @@ class CanvasRenderingContext2D extends CanvasRenderingContext native "CanvasRend
       JS('void', '#.fillText(#, #, #)', this, text, x, y);
     }
   }
+
+  @DomName('CanvasRenderingContext2D.fill')
+  void fill([String winding = 'nonzero']) {
+    JS('void', '#.fill(#)', this, winding);
+  }
+
+  /** Deprecated always returns 1.0 */
+  @DomName('CanvasRenderingContext2D.webkitBackingStorePixelRation')
+  @Experimental()
+  @deprecated
+  double get backingStorePixelRatio => 1.0;
 }
 
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
@@ -2823,6 +2738,7 @@ class CssRule extends Interceptor native "CSSRule" {
   void setProperty(String propertyName, String value, [String priority]) {
     // try/catch for IE9 which throws on unsupported values.
     try {
+      if (value == null) value = '';
       if (priority == null) {
         priority = '';
       }
@@ -4042,12 +3958,17 @@ abstract class CssStyleDeclarationBase {
   }
 
   /** Gets the value of "flex" */
-  String get flex =>
-    getPropertyValue('${Device.cssPrefix}flex');
+  String get flex {
+    String prefix = Device.cssPrefix;
+    if (Device.isFirefox) prefix = '';
+    return getPropertyValue('${prefix}flex');
+  }
 
   /** Sets the value of "flex" */
   void set flex(String value) {
-    setProperty('${Device.cssPrefix}flex', value, '');
+    String prefix = Device.cssPrefix;
+    if (Device.isFirefox) prefix = '';
+    setProperty('${prefix}flex', value, '');
   }
 
   /** Gets the value of "flex-basis" */
@@ -6298,7 +6219,9 @@ class DataListElement extends HtmlElement native "HTMLDataListElement" {
 
   @DomName('HTMLDataListElement.options')
   @DocsEditable()
-  final HtmlCollection options;
+  @Returns('HtmlCollection')
+  @Creates('HtmlCollection')
+  final List<Node> options;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -6307,7 +6230,7 @@ class DataListElement extends HtmlElement native "HTMLDataListElement" {
 
 @DocsEditable()
 @DomName('Clipboard')
-class DataTransfer extends Interceptor native "Clipboard" {
+class DataTransfer extends Interceptor native "Clipboard,DataTransfer" {
   // To suppress missing implicit constructor warnings.
   factory DataTransfer._() { throw new UnsupportedError("Not supported"); }
 
@@ -6363,7 +6286,7 @@ class DataTransfer extends Interceptor native "Clipboard" {
 
   @DomName('Clipboard.setDragImage')
   @DocsEditable()
-  void setDragImage(Element element, int x, int y) native;
+  void setDragImage(Element image, int x, int y) native;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -7314,7 +7237,9 @@ class Document extends Node  native "Document"
 
   @DomName('Document.getElementsByClassName')
   @DocsEditable()
-  HtmlCollection getElementsByClassName(String classNames) native;
+  @Creates('NodeList|HtmlCollection')
+  @Returns('NodeList|HtmlCollection')
+  List<Node> getElementsByClassName(String classNames) native;
 
   @DomName('Document.getElementsByName')
   @DocsEditable()
@@ -7324,7 +7249,9 @@ class Document extends Node  native "Document"
 
   @DomName('Document.getElementsByTagName')
   @DocsEditable()
-  HtmlCollection getElementsByTagName(String localName) native;
+  @Creates('NodeList|HtmlCollection')
+  @Returns('NodeList|HtmlCollection')
+  List<Node> getElementsByTagName(String localName) native;
 
   @DomName('Document.importNode')
   @DocsEditable()
@@ -7406,7 +7333,9 @@ class Document extends Node  native "Document"
   @JSName('children')
   @DomName('Document.children')
   @DocsEditable()
-  final HtmlCollection _children;
+  @Returns('HtmlCollection')
+  @Creates('HtmlCollection')
+  final List<Node> _children;
 
   @JSName('firstElementChild')
   @DomName('Document.firstElementChild')
@@ -7744,10 +7673,14 @@ class Document extends Node  native "Document"
   ElementList queryAll(String relativeSelectors) =>
       querySelectorAll(relativeSelectors);
 
-  /// Checks if [register] is supported on the current platform.
-  bool get supportsRegister {
+  /// Checks if [registerElement] is supported on the current platform.
+  bool get supportsRegisterElement {
     return JS('bool', '("registerElement" in #)', this);
   }
+
+  /// *Deprecated*: use [supportsRegisterElement] instead.
+  @deprecated
+  bool get supportsRegister => supportsRegisterElement;
 
   @DomName('Document.createElement')
   Element createElement(String tagName, [String typeExtension]) {
@@ -8011,12 +7944,6 @@ class DomException extends Interceptor native "DOMException" {
 class DomImplementation extends Interceptor native "DOMImplementation" {
   // To suppress missing implicit constructor warnings.
   factory DomImplementation._() { throw new UnsupportedError("Not supported"); }
-
-  @JSName('createCSSStyleSheet')
-  @DomName('DOMImplementation.createCSSStyleSheet')
-  @DocsEditable()
-  @Experimental() // non-standard
-  CssStyleSheet createCssStyleSheet(String title, String media) native;
 
   @DomName('DOMImplementation.createDocument')
   @DocsEditable()
@@ -8313,8 +8240,7 @@ class _ChildrenElementList extends ListBase<Element>
   }
 
   void clear() {
-    // It is unclear if we want to keep non element nodes?
-    _element.text = '';
+    _element._clearChildren();
   }
 
   Element removeAt(int index) {
@@ -9310,7 +9236,7 @@ abstract class Element extends Node implements GlobalEventHandlers, ParentNode, 
    *          // Perform any element initialization.
    *       }
    *     }
-   *     document.register('x-custom', CustomElement);
+   *     document.registerElement('x-custom', CustomElement);
    */
   Element.created() : super._created() {
     // Validate that this is a custom element & perform any additional
@@ -9687,15 +9613,39 @@ abstract class Element extends Node implements GlobalEventHandlers, ParentNode, 
   /**
    * Called by the DOM when this element has been inserted into the live
    * document.
+   *
+   * More information can be found in the
+   * [Custom Elements](http://w3c.github.io/webcomponents/spec/custom/#dfn-attached-callback)
+   * draft specification.
    */
   @Experimental()
-  void enteredView() {}
+  void attached() {
+    // For the deprecation period, call the old callback.
+    enteredView();
+  }
 
   /**
    * Called by the DOM when this element has been removed from the live
    * document.
+   *
+   * More information can be found in the
+   * [Custom Elements](http://w3c.github.io/webcomponents/spec/custom/#dfn-detached-callback)
+   * draft specification.
    */
   @Experimental()
+  void detached() {
+    // For the deprecation period, call the old callback.
+    leftView();
+  }
+
+  /** *Deprecated*: override [attached] instead. */
+  @Experimental()
+  @deprecated
+  void enteredView() {}
+
+  /** *Deprecated*: override [detached] instead. */
+  @Experimental()
+  @deprecated
   void leftView() {}
 
   /**
@@ -10163,7 +10113,7 @@ abstract class Element extends Node implements GlobalEventHandlers, ParentNode, 
 
       // Workaround for Chrome bug 229142- URIs are not resolved in new doc.
       var base = _parseDocument.createElement('base');
-      base.href = document._baseUri;
+      base.href = document.baseUri;
       _parseDocument.head.append(base);
     }
     var contextElement;
@@ -10240,6 +10190,63 @@ abstract class Element extends Node implements GlobalEventHandlers, ParentNode, 
    * used when an explicit accessor is not available.
    */
   ElementEvents get on => new ElementEvents(this);
+
+  @DomName('Element.offsetHeight')
+  @DocsEditable()
+  int get offsetHeight => JS('num', '#.offsetHeight', this).round();
+
+  @DomName('Element.offsetLeft')
+  @DocsEditable()
+  int get offsetLeft => JS('num', '#.offsetLeft', this).round();
+
+  @DomName('Element.offsetTop')
+  @DocsEditable()
+  int get offsetTop => JS('num', '#.offsetTop', this).round();
+
+  @DomName('Element.offsetWidth')
+  @DocsEditable()
+  int get offsetWidth => JS('num', '#.offsetWidth', this).round();
+
+  @DomName('Element.clientHeight')
+  @DocsEditable()
+  int get clientHeight => JS('num', '#.clientHeight', this).round();
+
+  @DomName('Element.clientLeft')
+  @DocsEditable()
+  int get clientLeft => JS('num', '#.clientLeft', this).round();
+
+  @DomName('Element.clientTop')
+  @DocsEditable()
+  int get clientTop => JS('num', '#.clientTop', this).round();
+
+  @DomName('Element.clientWidth')
+  @DocsEditable()
+  int get clientWidth => JS('num', '#.clientWidth', this).round();
+
+  @DomName('Element.scrollHeight')
+  @DocsEditable()
+  int get scrollHeight => JS('num', '#.scrollHeight', this).round();
+
+  @DomName('Element.scrollLeft')
+  @DocsEditable()
+  int get scrollLeft => JS('num', '#.scrollLeft', this).round();
+
+  @DomName('Element.scrollLeft')
+  @DocsEditable()
+  void set scrollLeft(int value) => JS("void", "#.scrollLeft = #", this, value.round());
+
+  @DomName('Element.scrollTop')
+  @DocsEditable()
+  int get scrollTop => JS('num', '#.scrollTop', this).round();
+
+  @DomName('Element.scrollTop')
+  @DocsEditable()
+  void set scrollTop(int value) => JS("void", "#.scrollTop = #", this, value.round());
+
+  @DomName('Element.scrollWidth')
+  @DocsEditable()
+  int get scrollWidth => JS('num', '#.scrollWidth', this).round();
+
 
   // To suppress missing implicit constructor warnings.
   factory Element._() { throw new UnsupportedError("Not supported"); }
@@ -10924,21 +10931,25 @@ abstract class Element extends Node implements GlobalEventHandlers, ParentNode, 
   @DocsEditable()
   String className;
 
+  @JSName('clientHeight')
   @DomName('Element.clientHeight')
   @DocsEditable()
-  final int clientHeight;
+  final int _clientHeight;
 
+  @JSName('clientLeft')
   @DomName('Element.clientLeft')
   @DocsEditable()
-  final int clientLeft;
+  final int _clientLeft;
 
+  @JSName('clientTop')
   @DomName('Element.clientTop')
   @DocsEditable()
-  final int clientTop;
+  final int _clientTop;
 
+  @JSName('clientWidth')
   @DomName('Element.clientWidth')
   @DocsEditable()
-  final int clientWidth;
+  final int _clientWidth;
 
   @DomName('Element.id')
   @DocsEditable()
@@ -10955,46 +10966,54 @@ abstract class Element extends Node implements GlobalEventHandlers, ParentNode, 
   // Use implementation from Node.
   // final String _namespaceUri;
 
+  @JSName('offsetHeight')
   @DomName('Element.offsetHeight')
   @DocsEditable()
-  final int offsetHeight;
+  final int _offsetHeight;
 
+  @JSName('offsetLeft')
   @DomName('Element.offsetLeft')
   @DocsEditable()
-  final int offsetLeft;
+  final int _offsetLeft;
 
   @DomName('Element.offsetParent')
   @DocsEditable()
   final Element offsetParent;
 
+  @JSName('offsetTop')
   @DomName('Element.offsetTop')
   @DocsEditable()
-  final int offsetTop;
+  final int _offsetTop;
 
+  @JSName('offsetWidth')
   @DomName('Element.offsetWidth')
   @DocsEditable()
-  final int offsetWidth;
+  final int _offsetWidth;
 
   @JSName('outerHTML')
   @DomName('Element.outerHTML')
   @DocsEditable()
   final String outerHtml;
 
+  @JSName('scrollHeight')
   @DomName('Element.scrollHeight')
   @DocsEditable()
-  final int scrollHeight;
+  final int _scrollHeight;
 
+  @JSName('scrollLeft')
   @DomName('Element.scrollLeft')
   @DocsEditable()
-  int scrollLeft;
+  int _scrollLeft;
 
+  @JSName('scrollTop')
   @DomName('Element.scrollTop')
   @DocsEditable()
-  int scrollTop;
+  int _scrollTop;
 
+  @JSName('scrollWidth')
   @DomName('Element.scrollWidth')
   @DocsEditable()
-  final int scrollWidth;
+  final int _scrollWidth;
 
   @DomName('Element.style')
   @DocsEditable()
@@ -11120,12 +11139,16 @@ abstract class Element extends Node implements GlobalEventHandlers, ParentNode, 
    */
   @DomName('Element.getElementsByClassName')
   @DocsEditable()
-  HtmlCollection getElementsByClassName(String classNames) native;
+  @Creates('NodeList|HtmlCollection')
+  @Returns('NodeList|HtmlCollection')
+  List<Node> getElementsByClassName(String classNames) native;
 
   @JSName('getElementsByTagName')
   @DomName('Element.getElementsByTagName')
   @DocsEditable()
-  HtmlCollection _getElementsByTagName(String name) native;
+  @Creates('NodeList|HtmlCollection')
+  @Returns('NodeList|HtmlCollection')
+  List<Node> _getElementsByTagName(String name) native;
 
   @JSName('hasAttribute')
   @DomName('Element.hasAttribute')
@@ -11279,7 +11302,9 @@ abstract class Element extends Node implements GlobalEventHandlers, ParentNode, 
   @JSName('children')
   @DomName('Element.children')
   @DocsEditable()
-  final HtmlCollection _children;
+  @Returns('HtmlCollection')
+  @Creates('HtmlCollection')
+  final List<Node> _children;
 
   @JSName('firstElementChild')
   @DomName('Element.firstElementChild')
@@ -12391,7 +12416,9 @@ class FieldSetElement extends HtmlElement native "HTMLFieldSetElement" {
 
   @DomName('HTMLFieldSetElement.elements')
   @DocsEditable()
-  final HtmlCollection elements;
+  @Returns('HtmlCollection')
+  @Creates('HtmlCollection')
+  final List<Node> elements;
 
   @DomName('HTMLFieldSetElement.form')
   @DocsEditable()
@@ -13298,7 +13325,17 @@ class FormElement extends HtmlElement native "HTMLFormElement" {
   @DocsEditable()
   // http://lists.whatwg.org/htdig.cgi/whatwg-whatwg.org/2012-October/037711.html
   @Experimental()
-  void requestAutocomplete() native;
+  void requestAutocomplete(Map details) {
+    var details_1 = convertDartToNative_Dictionary(details);
+    _requestAutocomplete_1(details_1);
+    return;
+  }
+  @JSName('requestAutocomplete')
+  @DomName('HTMLFormElement.requestAutocomplete')
+  @DocsEditable()
+  // http://lists.whatwg.org/htdig.cgi/whatwg-whatwg.org/2012-October/037711.html
+  @Experimental()
+  void _requestAutocomplete_1(details) native;
 
   @DomName('HTMLFormElement.reset')
   @DocsEditable()
@@ -14313,7 +14350,7 @@ class HtmlDocument extends Document native "HTMLDocument" {
    *     }
    *
    *     main() {
-   *       document.register('x-foo', FooElement);
+   *       document.registerElement('x-foo', FooElement);
    *       var myFoo = new Element.tag('x-foo');
    *       // prints 'FooElement created!' to the console.
    *     }
@@ -14330,7 +14367,7 @@ class HtmlDocument extends Document native "HTMLDocument" {
    *     }
    *
    *     main() {
-   *       document.register('x-bar', BarElement);
+   *       document.registerElement('x-bar', BarElement);
    *       var myBar = new Element.tag('input', 'x-bar');
    *       // prints 'BarElement created!' to the console.
    *     }
@@ -14338,36 +14375,18 @@ class HtmlDocument extends Document native "HTMLDocument" {
    * This custom element can also be instantiated via HTML using the syntax
    * `<input is="x-bar"></input>`
    *
-   * The [nativeTagName] parameter is needed by platforms without native support
-   * when subclassing a native type other than:
-   *
-   * * HtmlElement
-   * * SvgElement
-   * * AnchorElement
-   * * AudioElement
-   * * ButtonElement
-   * * CanvasElement
-   * * DivElement
-   * * ImageElement
-   * * InputElement
-   * * LIElement
-   * * LabelElement
-   * * MenuElement
-   * * MeterElement
-   * * OListElement
-   * * OptionElement
-   * * OutputElement
-   * * ParagraphElement
-   * * PreElement
-   * * ProgressElement
-   * * SelectElement
-   * * SpanElement
-   * * UListElement
-   * * VideoElement
    */
-  void register(String tag, Type customElementClass, {String extendsTag}) {
+  void registerElement(String tag, Type customElementClass,
+      {String extendsTag}) {
     _registerCustomElement(JS('', 'window'), this, tag, customElementClass,
         extendsTag);
+  }
+
+  /** *Deprecated*: use [registerElement] instead. */
+  @deprecated
+  @Experimental()
+  void register(String tag, Type customElementClass, {String extendsTag}) {
+    return registerElement(tag, customElementClass, extendsTag: extendsTag);
   }
 
   /**
@@ -14405,6 +14424,19 @@ class HtmlDocument extends Document native "HTMLDocument" {
   @Experimental()
   Stream<Event> get onVisibilityChange =>
       visibilityChangeEvent.forTarget(this);
+
+  /// Creates an element upgrader which can be used to change the Dart wrapper
+  /// type for elements.
+  ///
+  /// The type specified must be a subclass of HtmlElement, when an element is
+  /// upgraded then the created constructor will be invoked on that element.
+  ///
+  /// If the type is not a direct subclass of HtmlElement then the extendsTag
+  /// parameter must be provided.
+  @Experimental()
+  ElementUpgrader createElementUpgrader(Type type, {String extendsTag}) {
+    return new _JSElementUpgrader(this, type, extendsTag);
+  }
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -14588,12 +14620,18 @@ class HttpRequest extends HttpRequestEventTarget native "XMLHttpRequest" {
    *
    * By default `request` will perform an HTTP GET request, but a different
    * method (`POST`, `PUT`, `DELETE`, etc) can be used by specifying the
-   * [method] parameter.
+   * [method] parameter. (See also [HttpRequest.postFormData] for `POST` 
+   * requests only.
    *
    * The Future is completed when the response is available.
    *
    * If specified, `sendData` will send data in the form of a [ByteBuffer],
    * [Blob], [Document], [String], or [FormData] along with the HttpRequest.
+   *
+   * If specified, [responseType] sets the desired response format for the
+   * request. By default it is [String], but can also be 'arraybuffer', 'blob', 
+   * 'document', 'json', or 'text'. See also [HttpRequest.responseType] 
+   * for more information.
    *
    * The [withCredentials] parameter specified that credentials such as a cookie
    * (already) set in the header or
@@ -15283,7 +15321,7 @@ class HttpRequestEventTarget extends EventTarget native "XMLHttpRequestEventTarg
 @DomName('XMLHttpRequestUpload')
 // http://xhr.spec.whatwg.org/#xmlhttprequestupload
 @Experimental()
-class HttpRequestUpload extends HttpRequestEventTarget native "XMLHttpRequestUpload,XMLHttpRequestEventTarget" {
+class HttpRequestUpload extends HttpRequestEventTarget native "XMLHttpRequestUpload" {
   // To suppress missing implicit constructor warnings.
   factory HttpRequestUpload._() { throw new UnsupportedError("Not supported"); }
 }
@@ -15460,6 +15498,23 @@ class ImageElement extends HtmlElement implements CanvasImageSource native "HTML
   @DocsEditable()
   int width;
 
+}
+// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+
+@DocsEditable()
+@DomName('InjectedScriptHost')
+@Experimental() // untriaged
+class InjectedScriptHost extends Interceptor native "InjectedScriptHost" {
+  // To suppress missing implicit constructor warnings.
+  factory InjectedScriptHost._() { throw new UnsupportedError("Not supported"); }
+
+  @DomName('InjectedScriptHost.inspect')
+  @DocsEditable()
+  @Experimental() // untriaged
+  void inspect(Object objectId, Object hints) native;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -15724,24 +15779,6 @@ class InputElement extends HtmlElement implements
   @Experimental()
   // http://www.whatwg.org/specs/web-apps/current-work/multipage/states-of-the-type-attribute.html#concept-input-type-file-selected
   final List<Entry> entries;
-
-  @JSName('webkitGrammar')
-  @DomName('HTMLInputElement.webkitGrammar')
-  @DocsEditable()
-  @SupportedBrowser(SupportedBrowser.CHROME)
-  @SupportedBrowser(SupportedBrowser.SAFARI)
-  @Experimental()
-  // http://lists.w3.org/Archives/Public/public-xg-htmlspeech/2011Feb/att-0020/api-draft.html#attrib-grammar
-  bool grammar;
-
-  @JSName('webkitSpeech')
-  @DomName('HTMLInputElement.webkitSpeech')
-  @DocsEditable()
-  @SupportedBrowser(SupportedBrowser.CHROME)
-  @SupportedBrowser(SupportedBrowser.SAFARI)
-  @Experimental()
-  // http://lists.w3.org/Archives/Public/public-xg-htmlspeech/2011Feb/att-0020/api-draft.html#attrib-speech
-  bool speech;
 
   @JSName('webkitdirectory')
   @DomName('HTMLInputElement.webkitdirectory')
@@ -16396,6 +16433,40 @@ class InputMethodContext extends EventTarget native "InputMethodContext" {
 
 
 @DocsEditable()
+@DomName('InstallEvent')
+@Experimental() // untriaged
+class InstallEvent extends InstallPhaseEvent native "InstallEvent" {
+  // To suppress missing implicit constructor warnings.
+  factory InstallEvent._() { throw new UnsupportedError("Not supported"); }
+
+  @DomName('InstallEvent.replace')
+  @DocsEditable()
+  @Experimental() // untriaged
+  void replace() native;
+}
+// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+
+@DocsEditable()
+@DomName('InstallPhaseEvent')
+@Experimental() // untriaged
+class InstallPhaseEvent extends Event native "InstallPhaseEvent" {
+  // To suppress missing implicit constructor warnings.
+  factory InstallPhaseEvent._() { throw new UnsupportedError("Not supported"); }
+
+  @DomName('InstallPhaseEvent.waitUntil')
+  @DocsEditable()
+  @Experimental() // untriaged
+  void waitUntil(Object value) native;
+}
+// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+
+@DocsEditable()
 @DomName('KeyPair')
 @Experimental() // untriaged
 class KeyPair extends Interceptor native "KeyPair" {
@@ -16904,7 +16975,9 @@ class MapElement extends HtmlElement native "HTMLMapElement" {
 
   @DomName('HTMLMapElement.areas')
   @DocsEditable()
-  final HtmlCollection areas;
+  @Returns('HtmlCollection')
+  @Creates('HtmlCollection')
+  final List<Node> areas;
 
   @DomName('HTMLMapElement.name')
   @DocsEditable()
@@ -19667,7 +19740,7 @@ class _ChildNodeListLazy extends ListBase<Node> implements NodeListWrapper {
   }
 
   void clear() {
-    _this.text = '';
+    _this._clearChildren();
   }
 
   void operator []=(int index, Node value) {
@@ -19789,6 +19862,12 @@ class Node extends EventTarget native "Node" {
     }
   }
 
+  void _clearChildren() {
+    while (firstChild != null) {
+      _removeChild(firstChild);
+    }
+  }
+
   /**
    * Print out a String representation of this Node.
    */
@@ -19847,7 +19926,7 @@ class Node extends EventTarget native "Node" {
   @JSName('baseURI')
   @DomName('Node.baseURI')
   @DocsEditable()
-  final String _baseUri;
+  final String baseUri;
 
   /**
    * A list of this node's children.
@@ -20861,7 +20940,7 @@ abstract class ParentNode extends Interceptor {
 
   final int _childElementCount;
 
-  final HtmlCollection _children;
+  final List<Node> _children;
 
   final Element _firstElementChild;
 
@@ -22764,26 +22843,7 @@ class Screen extends EventTarget native "Screen" {
   @DomName('Screen.lockOrientation')
   @DocsEditable()
   @Experimental() // untriaged
-  bool lockOrientation(orientation_OR_orientations) {
-    if ((orientation_OR_orientations is String || orientation_OR_orientations == null)) {
-      return _lockOrientation_1(orientation_OR_orientations);
-    }
-    if ((orientation_OR_orientations is List<String> || orientation_OR_orientations == null)) {
-      List orientations_1 = convertDartToNative_StringArray(orientation_OR_orientations);
-      return _lockOrientation_2(orientations_1);
-    }
-    throw new ArgumentError("Incorrect number or type of arguments");
-  }
-  @JSName('lockOrientation')
-  @DomName('Screen.lockOrientation')
-  @DocsEditable()
-  @Experimental() // untriaged
-  bool _lockOrientation_1(String orientation) native;
-  @JSName('lockOrientation')
-  @DomName('Screen.lockOrientation')
-  @DocsEditable()
-  @Experimental() // untriaged
-  bool _lockOrientation_2(List orientations) native;
+  bool lockOrientation(String orientation) native;
 
   @DomName('Screen.unlockOrientation')
   @DocsEditable()
@@ -23227,10 +23287,6 @@ class ShadowRoot extends DocumentFragment native "ShadowRoot" {
   @DocsEditable()
   final Element activeElement;
 
-  @DomName('ShadowRoot.applyAuthorStyles')
-  @DocsEditable()
-  bool applyAuthorStyles;
-
   @DomName('ShadowRoot.host')
   @DocsEditable()
   @Experimental() // untriaged
@@ -23246,9 +23302,10 @@ class ShadowRoot extends DocumentFragment native "ShadowRoot" {
   @Experimental() // untriaged
   final ShadowRoot olderShadowRoot;
 
+  @JSName('resetStyleInheritance')
   @DomName('ShadowRoot.resetStyleInheritance')
   @DocsEditable()
-  bool resetStyleInheritance;
+  bool _resetStyleInheritance;
 
   @DomName('ShadowRoot.styleSheets')
   @DocsEditable()
@@ -23272,11 +23329,15 @@ class ShadowRoot extends DocumentFragment native "ShadowRoot" {
 
   @DomName('ShadowRoot.getElementsByClassName')
   @DocsEditable()
-  HtmlCollection getElementsByClassName(String className) native;
+  @Creates('NodeList|HtmlCollection')
+  @Returns('NodeList|HtmlCollection')
+  List<Node> getElementsByClassName(String className) native;
 
   @DomName('ShadowRoot.getElementsByTagName')
   @DocsEditable()
-  HtmlCollection getElementsByTagName(String tagName) native;
+  @Creates('NodeList|HtmlCollection')
+  @Returns('NodeList|HtmlCollection')
+  List<Node> getElementsByTagName(String tagName) native;
 
   @DomName('ShadowRoot.getSelection')
   @DocsEditable()
@@ -23284,6 +23345,41 @@ class ShadowRoot extends DocumentFragment native "ShadowRoot" {
 
   static bool get supported =>
       JS('bool', '!!(Element.prototype.webkitCreateShadowRoot)');
+
+  static bool _shadowRootDeprecationReported = false;
+  static void _shadowRootDeprecationReport() {
+    if (!_shadowRootDeprecationReported) {
+      window.console.warn('''
+ShadowRoot.resetStyleInheritance and ShadowRoot.applyAuthorStyles now deprecated in dart:html.
+Please remove them from your code.
+''');
+      _shadowRootDeprecationReported = true;
+    }
+  }
+
+  @deprecated
+  bool get resetStyleInheritance {
+    _shadowRootDeprecationReport();
+    // Default value from when it was specified.
+    return false;
+  }
+
+  @deprecated
+  void set resetStyleInheritance(bool value) {
+    _shadowRootDeprecationReport();
+  }
+
+  @deprecated
+  bool get applyAuthorStyles {
+    _shadowRootDeprecationReport();
+    // Default value from when it was specified.
+    return false;
+  }
+
+  @deprecated
+  void set applyAuthorStyles(bool value) {
+    _shadowRootDeprecationReport();
+  }
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -23699,12 +23795,6 @@ class SpeechGrammarList extends Interceptor with ListMixin<SpeechGrammar>, Immut
 class SpeechInputEvent extends Event native "SpeechInputEvent" {
   // To suppress missing implicit constructor warnings.
   factory SpeechInputEvent._() { throw new UnsupportedError("Not supported"); }
-
-  @DomName('SpeechInputEvent.results')
-  @DocsEditable()
-  @Returns('_SpeechInputResultList')
-  @Creates('_SpeechInputResultList')
-  final List<SpeechInputResult> results;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -23718,14 +23808,6 @@ class SpeechInputEvent extends Event native "SpeechInputEvent" {
 class SpeechInputResult extends Interceptor native "SpeechInputResult" {
   // To suppress missing implicit constructor warnings.
   factory SpeechInputResult._() { throw new UnsupportedError("Not supported"); }
-
-  @DomName('SpeechInputResult.confidence')
-  @DocsEditable()
-  final double confidence;
-
-  @DomName('SpeechInputResult.utterance')
-  @DocsEditable()
-  final String utterance;
 }
 // Copyright (c) 2013, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -24830,12 +24912,16 @@ class TableElement extends HtmlElement native "HTMLTableElement" {
   @JSName('rows')
   @DomName('HTMLTableElement.rows')
   @DocsEditable()
-  final HtmlCollection _rows;
+  @Returns('HtmlCollection')
+  @Creates('HtmlCollection')
+  final List<Node> _rows;
 
   @JSName('tBodies')
   @DomName('HTMLTableElement.tBodies')
   @DocsEditable()
-  final HtmlCollection _tBodies;
+  @Returns('HtmlCollection')
+  @Creates('HtmlCollection')
+  final List<Node> _tBodies;
 
   @DomName('HTMLTableElement.tFoot')
   @DocsEditable()
@@ -24931,7 +25017,9 @@ class TableRowElement extends HtmlElement native "HTMLTableRowElement" {
   @JSName('cells')
   @DomName('HTMLTableRowElement.cells')
   @DocsEditable()
-  final HtmlCollection _cells;
+  @Returns('HtmlCollection')
+  @Creates('HtmlCollection')
+  final List<Node> _cells;
 
   @DomName('HTMLTableRowElement.rowIndex')
   @DocsEditable()
@@ -24995,7 +25083,9 @@ class TableSectionElement extends HtmlElement native "HTMLTableSectionElement" {
   @JSName('rows')
   @DomName('HTMLTableSectionElement.rows')
   @DocsEditable()
-  final HtmlCollection _rows;
+  @Returns('HtmlCollection')
+  @Creates('HtmlCollection')
+  final List<Node> _rows;
 
   @DomName('HTMLTableSectionElement.deleteRow')
   @DocsEditable()
@@ -25649,11 +25739,6 @@ class TimedItem extends Interceptor native "TimedItem" {
   @DocsEditable()
   @Experimental() // untriaged
   final Player player;
-
-  @DomName('TimedItem.specified')
-  @DocsEditable()
-  @Experimental() // untriaged
-  final Timing specified;
 
   @DomName('TimedItem.startTime')
   @DocsEditable()
@@ -26349,11 +26434,6 @@ class Url extends Interceptor implements UrlUtils native "URL" {
          '(self.URL || self.webkitURL).revokeObjectURL(#)', url);
   // To suppress missing implicit constructor warnings.
   factory Url._() { throw new UnsupportedError("Not supported"); }
-
-  @JSName('createObjectURL')
-  @DomName('URL.createObjectURL')
-  @DocsEditable()
-  static String _createObjectUrlFromWebKitSource(_WebKitMediaSource source) native;
 
   // From URLUtils
 
@@ -27400,58 +27480,28 @@ class Window extends EventTarget implements WindowEventHandlers, WindowBase, Glo
   }
 
   // API level getter and setter for Location.
-  // TODO: The cross domain safe wrapper can be inserted here or folded into
-  // _LocationWrapper.
+  // TODO: The cross domain safe wrapper can be inserted here.
   /**
    * The current location of this window.
    *
    *     Location currentLocation = window.location;
    *     print(currentLocation.href); // 'http://www.example.com:80/'
    */
-  Location get location {
-    // Firefox work-around for Location.  The Firefox location object cannot be
-    // made to behave like a Dart object so must be wrapped.
-    var result = _location;
-    if (_isDartLocation(result)) return result;  // e.g. on Chrome.
-    if (null == _location_wrapper) {
-      _location_wrapper = new _LocationWrapper(result);
-    }
-    return _location_wrapper;
-  }
+  Location get location => _location;
 
   // TODO: consider forcing users to do: window.location.assign('string').
   /**
    * Sets the window's location, which causes the browser to navigate to the new
-   * location. [value] may be a Location object or a string.
+   * location. [value] may be a Location object or a String.
    */
   void set location(value) {
-    if (value is _LocationWrapper) {
-      _location = value._ptr;
-    } else {
-      _location = value;
-    }
+    _location = value;
   }
-
-  _LocationWrapper _location_wrapper;  // Cached wrapped Location object.
 
   // Native getter and setter to access raw Location object.
-  dynamic get _location => JS('Location|=Object', '#.location', this);
+  dynamic get _location => JS('Location|Null', '#.location', this);
   void set _location(value) {
     JS('void', '#.location = #', this, value);
-  }
-  // Prevent compiled from thinking 'location' property is available for a Dart
-  // member.
-  @JSName('location')
-  _protect_location() native;
-
-  static _isDartLocation(thing) {
-    // On Firefox the code that implements 'is Location' fails to find the patch
-    // stub on Object.prototype and throws an exception.
-    try {
-      return thing is Location;
-    } catch (e) {
-      return false;
-    }
   }
 
   /**
@@ -29388,13 +29438,6 @@ class WorkerConsole extends ConsoleBase native "WorkerConsole" {
 class WorkerCrypto extends Interceptor native "WorkerCrypto" {
   // To suppress missing implicit constructor warnings.
   factory WorkerCrypto._() { throw new UnsupportedError("Not supported"); }
-
-  @DomName('WorkerCrypto.getRandomValues')
-  @DocsEditable()
-  @Experimental() // untriaged
-  @Creates('TypedData')
-  @Returns('TypedData|Null')
-  TypedData getRandomValues(TypedData array) native;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -29463,15 +29506,6 @@ class WorkerGlobalScope extends EventTarget implements _WindowTimers, WindowBase
   @DocsEditable()
   @Experimental() // untriaged
   final WorkerGlobalScope self;
-
-  @JSName('webkitNotifications')
-  @DomName('WorkerGlobalScope.webkitNotifications')
-  @DocsEditable()
-  @SupportedBrowser(SupportedBrowser.CHROME)
-  @SupportedBrowser(SupportedBrowser.SAFARI)
-  @Experimental()
-  @Experimental() // untriaged
-  final _NotificationCenter _webkitNotifications;
 
   @DomName('WorkerGlobalScope.close')
   @DocsEditable()
@@ -34877,95 +34911,6 @@ abstract class ReadyState {
 
 
 /**
- * Helper class to implement custom events which wrap DOM events.
- */
-class _WrappedEvent implements Event {
-  final Event wrapped;
-
-  /** The CSS selector involved with event delegation. */
-  String _selector;
-
-  _WrappedEvent(this.wrapped);
-
-  bool get bubbles => wrapped.bubbles;
-
-  bool get cancelable => wrapped.cancelable;
-
-  DataTransfer get clipboardData => wrapped.clipboardData;
-
-  EventTarget get currentTarget => wrapped.currentTarget;
-
-  bool get defaultPrevented => wrapped.defaultPrevented;
-
-  int get eventPhase => wrapped.eventPhase;
-
-  EventTarget get target => wrapped.target;
-
-  int get timeStamp => wrapped.timeStamp;
-
-  String get type => wrapped.type;
-
-  void _initEvent(String eventTypeArg, bool canBubbleArg,
-      bool cancelableArg) {
-    throw new UnsupportedError(
-        'Cannot initialize this Event.');
-  }
-
-  void preventDefault() {
-    wrapped.preventDefault();
-  }
-
-  void stopImmediatePropagation() {
-    wrapped.stopImmediatePropagation();
-  }
-
-  void stopPropagation() {
-    wrapped.stopPropagation();
-  }
-
-  /**
-   * A pointer to the element whose CSS selector matched within which an event
-   * was fired. If this Event was not associated with any Event delegation,
-   * accessing this value will throw an [UnsupportedError].
-   */
-  Element get matchingTarget {
-    if (_selector == null) {
-      throw new UnsupportedError('Cannot call matchingTarget if this Event did'
-          ' not arise as a result of event delegation.');
-    }
-    var currentTarget = this.currentTarget;
-    var target = this.target;
-    var matchedTarget;
-    do {
-      if (target.matches(_selector)) return target;
-      target = target.parent;
-    } while (target != null && target != currentTarget.parent);
-    throw new StateError('No selector matched for populating matchedTarget.');
-  }
-
-  /**
-   * This event's path, taking into account shadow DOM.
-   *
-   * ## Other resources
-   *
-   * * [Shadow DOM extensions to Event]
-   * (http://w3c.github.io/webcomponents/spec/shadow/#extensions-to-event) from
-   * W3C.
-   */
-  // https://dvcs.w3.org/hg/webcomponents/raw-file/tip/spec/shadow/index.html#extensions-to-event
-  @Experimental()
-  List<Node> get path => wrapped.path;
-
-  dynamic get _get_currentTarget => wrapped._get_currentTarget;
-
-  dynamic get _get_target => wrapped._get_target;
-}
-// Copyright (c) 2013, the Dart project authors.  Please see the AUTHORS file
-// for details. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
-
-
-/**
  * A list which just wraps another list, for either intercepting list calls or
  * retyping the list (for example, from List<A> to List<B> where B extends A).
  */
@@ -35188,12 +35133,12 @@ _callConstructor(constructor, interceptor) {
   };
 }
 
-_callEnteredView(receiver) {
-  return receiver.enteredView();
+_callAttached(receiver) {
+  return receiver.attached();
 }
 
-_callLeftView(receiver) {
-  return receiver.leftView();
+_callDetached(receiver) {
+  return receiver.detached();
 }
  _callAttributeChanged(receiver, name, oldValue, newValue) {
   return receiver.attributeChanged(name, oldValue, newValue);
@@ -35259,7 +35204,7 @@ void _registerCustomElement(context, document, String tag, Type type,
   if (extendsTagName == null) {
     if (baseClassName != 'HTMLElement') {
       throw new UnsupportedError('Class must provide extendsTag if base '
-          'native class is not HTMLElement');
+          'native class is not HtmlElement');
     }
   } else {
     if (!JS('bool', '(#.createElement(#) instanceof window[#])',
@@ -35276,9 +35221,9 @@ void _registerCustomElement(context, document, String tag, Type type,
       JS('=Object', '{value: #}',
           _makeCallbackMethod(_callConstructor(constructor, interceptor))));
   JS('void', '#.attachedCallback = #', properties,
-      JS('=Object', '{value: #}', _makeCallbackMethod(_callEnteredView)));
+      JS('=Object', '{value: #}', _makeCallbackMethod(_callAttached)));
   JS('void', '#.detachedCallback = #', properties,
-      JS('=Object', '{value: #}', _makeCallbackMethod(_callLeftView)));
+      JS('=Object', '{value: #}', _makeCallbackMethod(_callDetached)));
   JS('void', '#.attributeChangedCallback = #', properties,
       JS('=Object', '{value: #}', _makeCallbackMethod3(_callAttributeChanged)));
 
@@ -35299,6 +35244,63 @@ void _registerCustomElement(context, document, String tag, Type type,
 //// Called by Element.created to do validation & initialization.
 void _initializeCustomElement(Element e) {
   // TODO(blois): Add validation that this is only in response to an upgrade.
+}
+
+/// Dart2JS implementation of ElementUpgrader
+class _JSElementUpgrader implements ElementUpgrader {
+  var _interceptor;
+  var _constructor;
+  var _nativeType;
+
+  _JSElementUpgrader(Document document, Type type, String extendsTag) {
+    var interceptorClass = findInterceptorConstructorForType(type);
+    if (interceptorClass == null) {
+      throw new ArgumentError(type);
+    }
+
+    _constructor = findConstructorForNativeSubclassType(type, 'created');
+    if (_constructor == null) {
+      throw new ArgumentError("$type has no constructor called 'created'");
+    }
+
+    // Workaround for 13190- use an article element to ensure that HTMLElement's
+    // interceptor is resolved correctly.
+    getNativeInterceptor(new Element.tag('article'));
+
+    var baseClassName = findDispatchTagForInterceptorClass(interceptorClass);
+    if (baseClassName == null) {
+      throw new ArgumentError(type);
+    }
+
+    if (extendsTag == null) {
+      if (baseClassName != 'HTMLElement') {
+        throw new UnsupportedError('Class must provide extendsTag if base '
+            'native class is not HtmlElement');
+      }
+      _nativeType = HtmlElement;
+    } else {
+      var element = document.createElement(extendsTag);
+      if (!JS('bool', '(# instanceof window[#])',
+          element, baseClassName)) {
+        throw new UnsupportedError(
+            'extendsTag does not match base native class');
+      }
+      _nativeType = element.runtimeType;
+    }
+
+    _interceptor = JS('=Object', '#.prototype', interceptorClass);
+  }
+
+  Element upgrade(Element element) {
+    // Only exact type matches are supported- cannot be a subclass.
+    if (element.runtimeType != _nativeType) {
+      throw new ArgumentError('element is not subclass of $_nativeType');
+    }
+
+    setNativeSubclassDispatchRecord(element, _interceptor);
+    JS('', '#(#)', _constructor, element);
+    return element;
+  }
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -35333,9 +35335,12 @@ class _DOMWindowCrossFrame implements WindowBase {
 
   void postMessage(var message, String targetOrigin, [List messagePorts = null]) {
     if (messagePorts == null) {
-      JS('void', '#.postMessage(#,#)', _window, message, targetOrigin);
+      JS('void', '#.postMessage(#,#)', _window,
+          convertDartToNative_SerializedScriptValue(message), targetOrigin);
     } else {
-      JS('void', '#.postMessage(#,#,#)', _window, message, targetOrigin, messagePorts);
+      JS('void', '#.postMessage(#,#,#)', _window,
+          convertDartToNative_SerializedScriptValue(message), targetOrigin,
+          messagePorts);
     }
   }
 
@@ -35654,94 +35659,6 @@ class KeyEvent extends _WrappedEvent implements KeyboardEvent {
   bool get repeat => throw new UnimplementedError();
   dynamic get _get_view => throw new UnimplementedError();
 }
-// Copyright (c) 2011, the Dart project authors.  Please see the AUTHORS file
-// for details. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
-
-
-// On Firefox 11, the object obtained from 'window.location' is very strange.
-// It can't be monkey-patched and seems immune to putting methods on
-// Object.prototype.  We are forced to wrap the object.
-
-class _LocationWrapper implements Location {
-
-  final _ptr;  // Opaque reference to real location.
-
-  _LocationWrapper(this._ptr);
-
-  // TODO(sra): Replace all the _set and _get calls with 'JS' forms.
-
-  // final List<String> ancestorOrigins;
-  List<String> get ancestorOrigins => _get(_ptr, 'ancestorOrigins');
-
-  // String hash;
-  String get hash => _get(_ptr, 'hash');
-  void set hash(String value) {
-    _set(_ptr, 'hash', value);
-  }
-
-  // String host;
-  String get host => _get(_ptr, 'host');
-  void set host(String value) {
-    _set(_ptr, 'host', value);
-  }
-
-  // String hostname;
-  String get hostname => _get(_ptr, 'hostname');
-  void set hostname(String value) {
-    _set(_ptr, 'hostname', value);
-  }
-
-  // String href;
-  String get href => _get(_ptr, 'href');
-  void set href(String value) {
-    _set(_ptr, 'href', value);
-  }
-
-  // final String origin;
-  String get origin {
-    if (JS('bool', '("origin" in #)', _ptr)) {
-      return JS('String', '#.origin', _ptr);
-    }
-    return '${this.protocol}//${this.host}';
-  }
-
-  // String pathname;
-  String get pathname => _get(_ptr, 'pathname');
-  void set pathname(String value) {
-    _set(_ptr, 'pathname', value);
-  }
-
-  // String port;
-  String get port => _get(_ptr, 'port');
-  void set port(String value) {
-    _set(_ptr, 'port', value);
-  }
-
-  // String protocol;
-  String get protocol => _get(_ptr, 'protocol');
-  void set protocol(String value) {
-    _set(_ptr, 'protocol', value);
-  }
-
-  // String search;
-  String get search => _get(_ptr, 'search');
-  void set search(String value) {
-    _set(_ptr, 'search', value);
-  }
-
-  void assign(String url) => JS('void', '#.assign(#)', _ptr, url);
-
-  void reload() => JS('void', '#.reload()', _ptr);
-
-  void replace(String url) => JS('void', '#.replace(#)', _ptr, url);
-
-  String toString() => JS('String', '#.toString()', _ptr);
-
-
-  static _get(p, m) => JS('var', '#[#]', p, m);
-  static _set(p, m, v) => JS('void', '#[#] = #', p, m, v);
-}
 // Copyright (c) 2013, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
@@ -35761,6 +35678,95 @@ class Platform {
    * error.
    */
   static final supportsSimd = false;
+}
+// Copyright (c) 2013, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+
+/**
+ * Helper class to implement custom events which wrap DOM events.
+ */
+class _WrappedEvent implements Event {
+  final Event wrapped;
+
+  /** The CSS selector involved with event delegation. */
+  String _selector;
+
+  _WrappedEvent(this.wrapped);
+
+  bool get bubbles => wrapped.bubbles;
+
+  bool get cancelable => wrapped.cancelable;
+
+  DataTransfer get clipboardData => wrapped.clipboardData;
+
+  EventTarget get currentTarget => wrapped.currentTarget;
+
+  bool get defaultPrevented => wrapped.defaultPrevented;
+
+  int get eventPhase => wrapped.eventPhase;
+
+  EventTarget get target => wrapped.target;
+
+  int get timeStamp => wrapped.timeStamp;
+
+  String get type => wrapped.type;
+
+  void _initEvent(String eventTypeArg, bool canBubbleArg,
+      bool cancelableArg) {
+    throw new UnsupportedError(
+        'Cannot initialize this Event.');
+  }
+
+  void preventDefault() {
+    wrapped.preventDefault();
+  }
+
+  void stopImmediatePropagation() {
+    wrapped.stopImmediatePropagation();
+  }
+
+  void stopPropagation() {
+    wrapped.stopPropagation();
+  }
+
+  /**
+   * A pointer to the element whose CSS selector matched within which an event
+   * was fired. If this Event was not associated with any Event delegation,
+   * accessing this value will throw an [UnsupportedError].
+   */
+  Element get matchingTarget {
+    if (_selector == null) {
+      throw new UnsupportedError('Cannot call matchingTarget if this Event did'
+          ' not arise as a result of event delegation.');
+    }
+    var currentTarget = this.currentTarget;
+    var target = this.target;
+    var matchedTarget;
+    do {
+      if (target.matches(_selector)) return target;
+      target = target.parent;
+    } while (target != null && target != currentTarget.parent);
+    throw new StateError('No selector matched for populating matchedTarget.');
+  }
+
+  /**
+   * This event's path, taking into account shadow DOM.
+   *
+   * ## Other resources
+   *
+   * * [Shadow DOM extensions to Event]
+   * (http://w3c.github.io/webcomponents/spec/shadow/#extensions-to-event) from
+   * W3C.
+   */
+  // https://dvcs.w3.org/hg/webcomponents/raw-file/tip/spec/shadow/index.html#extensions-to-event
+  @Experimental()
+  List<Node> get path => wrapped.path;
+
+  dynamic get _get_currentTarget => wrapped._get_currentTarget;
+
+  dynamic get _get_target => wrapped._get_target;
 }
 // Copyright (c) 2013, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -35831,6 +35837,15 @@ Element querySelector(String selectors) => document.querySelector(selectors);
  * [CSS selector specification](http://www.w3.org/TR/css3-selectors/).
  */
 ElementList querySelectorAll(String selectors) => document.querySelectorAll(selectors);
+
+/// A utility for changing the Dart wrapper type for elements.
+abstract class ElementUpgrader {
+  /// Upgrade the specified element to be of the Dart type this was created for.
+  ///
+  /// After upgrading the element passed in is invalid and the returned value
+  /// should be used instead.
+  Element upgrade(Element element);
+}
 // Copyright (c) 2013, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.

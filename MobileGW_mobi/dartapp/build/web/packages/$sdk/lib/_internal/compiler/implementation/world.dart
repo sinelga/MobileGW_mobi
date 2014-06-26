@@ -29,6 +29,9 @@ class World {
 
   final Set<Element> elementsThatCannotThrow = new Set<Element>();
 
+  final Set<Element> functionsThatMightBePassedToApply =
+      new Set<FunctionElement>();
+
   Set<ClassElement> subclassesOf(ClassElement cls) {
     return _subclasses[cls.declaration];
   }
@@ -138,7 +141,7 @@ class World {
   }
 
   bool hasAnyUserDefinedGetter(Selector selector) {
-    return allFunctions.filter(selector).any((each) => each.isGetter());
+    return allFunctions.filter(selector).any((each) => each.isGetter);
   }
 
   // Returns whether a subclass of [superclass] implements [type].
@@ -177,14 +180,14 @@ class World {
   }
 
   void registerUsedElement(Element element) {
-    if (element.isInstanceMember() && !element.isAbstract) {
+    if (element.isInstanceMember && !element.isAbstract) {
       allFunctions.add(element);
     }
   }
 
   VariableElement locateSingleField(Selector selector) {
     Element result = locateSingleElement(selector);
-    return (result != null && result.isField()) ? result : null;
+    return (result != null && result.isField) ? result : null;
   }
 
   Element locateSingleElement(Selector selector) {
@@ -203,8 +206,8 @@ class World {
   }
 
   bool fieldNeverChanges(Element element) {
-    if (!element.isField()) return false;
-    if (element.isNative()) {
+    if (!element.isField) return false;
+    if (element.isNative) {
       // Some native fields are views of data that may be changed by operations.
       // E.g. node.firstChild depends on parentNode.removeBefore(n1, n2).
       // TODO(sra): Refine the effect classification so that native effects are
@@ -212,9 +215,9 @@ class World {
       return false;
     }
 
-    return element.modifiers.isFinal()
-        || element.modifiers.isConst()
-        || (element.isInstanceMember()
+    return element.isFinal
+        || element.isConst
+        || (element.isInstanceMember
             && !compiler.resolverWorld.hasInvokedSetter(element, compiler));
   }
 
@@ -225,8 +228,8 @@ class World {
     // between a constructor and its body for side effects. This
     // implies that currently, the side effects of a constructor body
     // contain the side effects of the initializers.
-    assert(!element.isGenerativeConstructorBody());
-    assert(!element.isField());
+    assert(!element.isGenerativeConstructorBody);
+    assert(!element.isField);
     return sideEffects.putIfAbsent(element.declaration, () {
       return new SideEffects();
     });
@@ -244,18 +247,18 @@ class World {
 
   SideEffects getSideEffectsOfSelector(Selector selector) {
     // We're not tracking side effects of closures.
-    if (selector.isClosureCall()) return new SideEffects();
+    if (selector.isClosureCall) return new SideEffects();
     SideEffects sideEffects = new SideEffects.empty();
     for (Element e in allFunctions.filter(selector)) {
-      if (e.isField()) {
-        if (selector.isGetter()) {
+      if (e.isField) {
+        if (selector.isGetter) {
           if (!fieldNeverChanges(e)) {
             sideEffects.setDependsOnInstancePropertyStore();
           }
-        } else if (selector.isSetter()) {
+        } else if (selector.isSetter) {
           sideEffects.setChangesInstanceProperty();
         } else {
-          assert(selector.isCall());
+          assert(selector.isCall);
           sideEffects.setAllSideEffects();
           sideEffects.setDependsOnSomething();
         }
@@ -272,5 +275,27 @@ class World {
 
   bool getCannotThrow(Element element) {
     return elementsThatCannotThrow.contains(element);
+  }
+
+  void registerImplicitSuperCall(Registry registry,
+                                 FunctionElement superConstructor) {
+    registry.registerDependency(superConstructor);
+  }
+
+  void registerMightBePassedToApply(Element element) {
+    functionsThatMightBePassedToApply.add(element);
+  }
+
+  bool getMightBePassedToApply(Element element) {
+    // We have to check whether the element we look at was created after
+    // type inference ran. This is currently only the case for the call
+    // method of function classes that were generated for function
+    // expressions. In such a case, we have to look at the original
+    // function expressions's element.
+    // TODO(herhut): Generate classes for function expressions earlier.
+    if (element is closureMapping.SynthesizedCallMethodElementX) {
+      return getMightBePassedToApply(element.expression);
+    }
+    return functionsThatMightBePassedToApply.contains(element);
   }
 }

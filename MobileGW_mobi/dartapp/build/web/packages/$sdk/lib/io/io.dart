@@ -200,8 +200,11 @@ import 'dart:async';
 import 'dart:_internal';
 import 'dart:collection' show HashMap,
                               HashSet,
+                              Queue,
+                              ListQueue,
                               LinkedList,
-                              LinkedListEntry;
+                              LinkedListEntry,
+                              UnmodifiableMapView;
 import 'dart:convert';
 import 'dart:isolate';
 import 'dart:math';
@@ -229,6 +232,7 @@ part 'link.dart';
 part 'platform.dart';
 part 'platform_impl.dart';
 part 'process.dart';
+part 'service_object.dart';
 part 'socket.dart';
 part 'stdio.dart';
 part 'string_transformer.dart';

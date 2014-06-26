@@ -45,18 +45,9 @@ class RuntimeTypes {
   Set<ClassElement> allInstantiatedArguments;
   Set<ClassElement> checkedArguments;
 
-  bool isJsNative(Element element) {
-    return (element == compiler.intClass ||
-            element == compiler.boolClass ||
-            element == compiler.numClass ||
-            element == compiler.doubleClass ||
-            element == compiler.stringClass ||
-            element == compiler.listClass);
-  }
-
   void registerRtiDependency(Element element, Element dependency) {
     // We're not dealing with typedef for now.
-    if (!element.isClass() || !dependency.isClass()) return;
+    if (!element.isClass || !dependency.isClass) return;
     Set<ClassElement> classes =
         rtiDependencies.putIfAbsent(element, () => new Set<ClassElement>());
     classes.add(dependency);
@@ -153,7 +144,7 @@ class RuntimeTypes {
 
     Set<ClassElement> classesUsingTypeVariableTests = new Set<ClassElement>();
     compiler.resolverWorld.isChecks.forEach((DartType type) {
-      if (type.kind == TypeKind.TYPE_VARIABLE) {
+      if (type.isTypeVariable) {
         TypeVariableElement variable = type.element;
         classesUsingTypeVariableTests.add(variable.enclosingElement);
       }
@@ -172,7 +163,7 @@ class RuntimeTypes {
     // Compute the set of all classes and methods that need runtime type
     // information.
     compiler.resolverWorld.isChecks.forEach((DartType type) {
-      if (type.kind == TypeKind.INTERFACE) {
+      if (type.isInterfaceType) {
         InterfaceType itf = type;
         if (!itf.treatAsRaw) {
           potentiallyAddForRti(itf.element);
@@ -185,7 +176,7 @@ class RuntimeTypes {
           // variables and function types containing type variables.
           potentiallyAddForRti(contextClass);
         }
-        if (type.kind == TypeKind.FUNCTION) {
+        if (type.isFunctionType) {
           void analyzeMethod(TypedElement method) {
             DartType memberType = method.type;
             ClassElement contextClass = Types.getClassContext(memberType);
@@ -236,7 +227,6 @@ class RuntimeTypes {
     // argument is a superclass of the element of an instantiated type.
     TypeCheckMapping result = new TypeCheckMapping();
     for (ClassElement element in instantiated) {
-      if (element == compiler.dynamicClass) continue;
       if (checked.contains(element)) {
         result.add(element, element, null);
       }
@@ -273,7 +263,7 @@ class RuntimeTypes {
     Set<DartType> instantiatedTypes =
         new Set<DartType>.from(universe.instantiatedTypes);
     for (DartType instantiatedType in universe.instantiatedTypes) {
-      if (instantiatedType.kind == TypeKind.INTERFACE) {
+      if (instantiatedType.isInterfaceType) {
         InterfaceType interface = instantiatedType;
         FunctionType callType = interface.callType;
         if (callType != null) {
@@ -322,7 +312,7 @@ class RuntimeTypes {
                               {bool isTypeArgument: false}) {
       for (DartType type in types) {
         directCollector.collect(type, isTypeArgument: isTypeArgument);
-        if (type.kind == TypeKind.INTERFACE) {
+        if (type.isInterfaceType) {
           ClassElement cls = type.element;
           for (DartType supertype in cls.allSupertypes) {
             superCollector.collect(supertype, isTypeArgument: isTypeArgument);
@@ -401,18 +391,19 @@ class RuntimeTypes {
         ..addAll(checkedArguments);
   }
 
-  /// Return the unique name for the element as an unquoted string.
-  String getJsName(Element element) {
+  String getTypeRepresentationForTypeConstant(DartType type) {
     JavaScriptBackend backend = compiler.backend;
     Namer namer = backend.namer;
-    return namer.isolateAccess(element);
-  }
-
-  String getRawTypeRepresentation(DartType type) {
-    String name = getJsName(type.element);
-    if (!type.element.isClass()) return name;
+    if (type.isDynamic) return namer.getRuntimeTypeName(null);
+    String name = namer.uniqueNameForTypeConstantElement(type.element);
+    if (!type.element.isClass) return name;
     InterfaceType interface = type;
     Link<DartType> variables = interface.element.typeVariables;
+    // Type constants can currently only be raw types, so there is no point
+    // adding ground-term type parameters, as they would just be 'dynamic'.
+    // TODO(sra): Since the result string is used only in constructing constant
+    // names, it would result in more readable names if the final string was a
+    // legal JavaScript identifer.
     if (variables.isEmpty) return name;
     String arguments =
         new List.filled(variables.slowLength(), 'dynamic').join(', ');
@@ -421,7 +412,7 @@ class RuntimeTypes {
 
   // TODO(karlklose): maybe precompute this value and store it in typeChecks?
   bool isTrivialSubstitution(ClassElement cls, ClassElement check) {
-    if (cls.isClosure()) {
+    if (cls.isClosure) {
       // TODO(karlklose): handle closures.
       return true;
     }
@@ -537,7 +528,7 @@ class RuntimeTypes {
             return type.toString();
         }).toList();
       }
-      return js.fun(parameters, js.return_(encoding));
+      return js('function(#) { return # }', [parameters, encoding]);
     }
   }
 
@@ -548,12 +539,9 @@ class RuntimeTypes {
     if (contextClass != null) {
       JavaScriptBackend backend = compiler.backend;
       String contextName = backend.namer.getNameOfClass(contextClass);
-      List<jsAst.Expression> arguments =
-          <jsAst.Expression>[encoding, this_, js.string(contextName)];
-      return js.fun([], js.return_(
-          new jsAst.Call(
-              backend.namer.elementAccess(backend.getComputeSignature()),
-              arguments)));
+      return js('function () { return #(#, #, #); }',
+          [ backend.namer.elementAccess(backend.getComputeSignature()),
+              encoding, this_, js.string(contextName) ]);
     } else {
       return encoding;
     }
@@ -596,7 +584,7 @@ class RuntimeTypes {
   }
 
   static int getTypeVariableIndex(TypeVariableElement variable) {
-    ClassElement classElement = variable.getEnclosingClass();
+    ClassElement classElement = variable.enclosingClass;
     Link<DartType> variables = classElement.typeVariables;
     for (int index = 0; !variables.isEmpty;
          index++, variables = variables.tail) {
@@ -638,7 +626,7 @@ class TypeRepresentationGenerator extends DartTypeVisitor {
   }
 
   jsAst.Expression getJavaScriptClassName(Element element) {
-    return js(namer.isolateAccess(backend.getImplementationClass(element)));
+    return namer.elementAccess(element);
   }
 
   visit(DartType type) {
@@ -785,9 +773,7 @@ class ArgumentCollector extends DartTypeVisitor {
   }
 
   visitInterfaceType(InterfaceType type, bool isTypeArgument) {
-    if (isTypeArgument) {
-      classes.add(backend.getImplementationClass(type.element));
-    }
+    if (isTypeArgument) classes.add(type.element);
     type.visitChildren(this, true);
   }
 
@@ -828,7 +814,7 @@ class FunctionArgumentCollector extends DartTypeVisitor {
 
   visitInterfaceType(InterfaceType type, bool inFunctionType) {
     if (inFunctionType) {
-      classes.add(backend.getImplementationClass(type.element));
+      classes.add(type.element);
     }
     type.visitChildren(this, inFunctionType);
   }
@@ -873,10 +859,10 @@ class Substitution {
     jsAst.Expression value =
         rti.getSubstitutionRepresentation(arguments, use);
     if (isFunction) {
-      List<String> formals = parameters.toList().map(declaration).toList();
-      return js.fun(formals, js.return_(value));
+      Iterable<jsAst.Expression> formals = parameters.toList().map(declaration);
+      return js('function(#) { return # }', [formals, value]);
     } else if (ensureIsFunction) {
-      return js.fun([], js.return_(value));
+      return js('function() { return # }', value);
     } else {
       return value;
     }

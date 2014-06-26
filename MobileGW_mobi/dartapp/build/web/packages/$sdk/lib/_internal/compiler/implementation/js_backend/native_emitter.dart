@@ -39,59 +39,10 @@ class NativeEmitter {
   String get n => emitter.n;
   String get N => emitter.N;
 
-  String get dynamicName {
-    Element element = compiler.findHelper('dynamicFunction');
-    return backend.namer.isolateAccess(element);
-  }
-
-  String get dynamicFunctionTableName {
-    Element element = compiler.findHelper('dynamicFunctionTable');
-    return backend.namer.isolateAccess(element);
-  }
-
-  String get typeNameOfName {
-    Element element = compiler.findHelper('getTypeNameOf');
-    return backend.namer.isolateAccess(element);
-  }
-
-  String get defPropName {
+  jsAst.Expression get defPropFunction {
     Element element = compiler.findHelper('defineProperty');
-    return backend.namer.isolateAccess(element);
+    return backend.namer.elementAccess(element);
   }
-
-  String get toStringHelperName {
-    Element element = compiler.findHelper('toStringForNativeObject');
-    return backend.namer.isolateAccess(element);
-  }
-
-  String get hashCodeHelperName {
-    Element element = compiler.findHelper('hashCodeForNativeObject');
-    return backend.namer.isolateAccess(element);
-  }
-
-  String get dispatchPropertyNameVariable {
-    Element element = compiler.findInterceptor('dispatchPropertyName');
-    return backend.namer.isolateAccess(element);
-  }
-
-  // The tags string contains comma-separated 'words' which are either dispatch
-  // tags (having JavaScript identifier syntax) and directives that begin with
-  // `!`.
-  List<String> nativeTagsOfClassRaw(ClassElement cls) {
-    String quotedName = cls.nativeTagInfo;
-    return quotedName.substring(1, quotedName.length - 1).split(',');
-  }
-
-  List<String> nativeTagsOfClass(ClassElement cls) {
-    return nativeTagsOfClassRaw(cls).where((s) => !s.startsWith('!')).toList();
-  }
-
-  bool nativeHasTagsMarker(ClassElement cls, String marker) {
-    return nativeTagsOfClassRaw(cls).contains(marker);
-  }
-
-  bool nativeForcedNonLeaf(ClassElement cls) =>
-      nativeHasTagsMarker(cls, '!nonleaf');
 
   /**
    * Writes the class definitions for the interceptors to [mainBuffer].
@@ -140,7 +91,7 @@ class NativeEmitter {
     Map<ClassElement, ClassBuilder> builders =
         new Map<ClassElement, ClassBuilder>();
     for (ClassElement classElement in classes) {
-      if (classElement.isNative()) {
+      if (classElement.isNative) {
         ClassBuilder builder = generateNativeClass(classElement);
         builders[classElement] = builder;
       }
@@ -185,7 +136,8 @@ class NativeEmitter {
       } else if (extensionPoints.containsKey(classElement)) {
         needed = true;
       }
-      if (classElement.isNative() && nativeForcedNonLeaf(classElement)) {
+      if (classElement.isNative &&
+          native.nativeTagsForcedNonLeaf(classElement)) {
         needed = true;
         nonleafClasses.add(classElement);
       }
@@ -205,8 +157,8 @@ class NativeEmitter {
         new Map<ClassElement, Set<String>>();
 
     for (ClassElement classElement in classes) {
-      if (!classElement.isNative()) continue;
-      List<String> nativeTags = nativeTagsOfClass(classElement);
+      if (!classElement.isNative) continue;
+      List<String> nativeTags = native.nativeTagsOfClass(classElement);
 
       if (nonleafClasses.contains(classElement) ||
           extensionPoints.containsKey(classElement)) {
@@ -282,7 +234,7 @@ class NativeEmitter {
 
     // Emit the native class interceptors that were actually used.
     for (ClassElement classElement in classes) {
-      if (!classElement.isNative()) continue;
+      if (!classElement.isNative) continue;
       if (neededClasses.contains(classElement)) {
         // Define interceptor class for [classElement].
         emitter.classEmitter.emitClassBuilderWithReflectionData(
@@ -303,7 +255,7 @@ class NativeEmitter {
       List<ClassElement> classes) {
     ClassElement nativeSuperclassOf(ClassElement element) {
       if (element == null) return null;
-      if (element.isNative()) return element;
+      if (element.isNative) return element;
       return nativeSuperclassOf(element.superclass);
     }
 
@@ -315,7 +267,7 @@ class NativeEmitter {
         new Map<ClassElement, List<ClassElement>>();
 
     for (ClassElement classElement in classes) {
-      if (classElement.isNative()) continue;
+      if (classElement.isNative) continue;
       ClassElement nativeAncestor = nativeAncestorOf(classElement);
       if (nativeAncestor != null) {
         map
@@ -343,7 +295,7 @@ class NativeEmitter {
     String superName = backend.namer.getNameOfClass(superclass);
 
     ClassBuilder builder = new ClassBuilder(backend.namer);
-    emitter.classEmitter.emitClassConstructor(classElement, builder, null);
+    emitter.classEmitter.emitClassConstructor(classElement, builder);
     bool hasFields = emitter.classEmitter.emitFields(
         classElement, builder, superName, classIsNative: true);
     int propertyCount = builder.properties.length;
@@ -373,9 +325,7 @@ class NativeEmitter {
     FunctionSignature parameters = member.functionSignature;
     Element converter =
         compiler.findHelper('convertDartClosureToJS');
-    String closureConverter = backend.namer.isolateAccess(converter);
-    Set<String> stubParameterNames = new Set<String>.from(
-        stubParameters.map((param) => param.name));
+    jsAst.Expression closureConverter = backend.namer.elementAccess(converter);
     parameters.forEachParameter((ParameterElement parameter) {
       String name = parameter.name;
       // If [name] is not in [stubParameters], then the parameter is an optional
@@ -389,7 +339,8 @@ class NativeEmitter {
             FunctionType functionType = type;
             int arity = functionType.computeArity();
             statements.add(
-                js('$name = $closureConverter($name, $arity)').toStatement());
+                js.statement('# = #(#, $arity)',
+                    [name, closureConverter, name]));
             break;
           }
         }
@@ -425,7 +376,7 @@ class NativeEmitter {
     assert(invariant(member, nativeMethods.contains(member)));
     // When calling a JS method, we call it with the native name, and only the
     // arguments up until the last one provided.
-    target = member.fixedBackendName();
+    target = member.fixedBackendName;
 
     if (isInterceptedMethod) {
       receiver = argumentsBuffer[0];
@@ -436,13 +387,14 @@ class NativeEmitter {
       arguments = argumentsBuffer.sublist(0,
           indexOfLastOptionalArgumentInParameters + 1);
     }
-    statements.add(new jsAst.Return(receiver[target](arguments)));
+    statements.add(
+        js.statement('return #.#(#)', [receiver, target, arguments]));
 
     return statements;
   }
 
   bool isSupertypeOfNativeClass(Element element) {
-    if (element.isTypeVariable()) {
+    if (element.isTypeVariable) {
       compiler.internalError(element, "Is check for type variable.");
       return false;
     }
@@ -452,7 +404,7 @@ class NativeEmitter {
       return false;
     }
 
-    if (!element.isClass()) {
+    if (!element.isClass) {
       compiler.internalError(element, "Is check does not handle element.");
       return false;
     }
@@ -471,7 +423,7 @@ class NativeEmitter {
     // by a native class in case we get a native instance that tries to spoof
     // the type info.  i.e the criteria for whether or not to use an interceptor
     // is whether the receiver can be native, not the type of the test.
-    if (!element.isClass()) return false;
+    if (element == null || !element.isClass) return false;
     ClassElement cls = element;
     if (Elements.isNativeOrExtendsNative(cls)) return true;
     return isSupertypeOfNativeClass(element);
@@ -495,17 +447,13 @@ class NativeEmitter {
     // If we have any properties to add to Object.prototype, we run
     // through them and add them using defineProperty.
     if (!objectProperties.isEmpty) {
-      jsAst.Expression init =
-          js.fun(['table'],
-              new jsAst.ForIn(
-                  new jsAst.VariableDeclarationList(
-                      [new jsAst.VariableInitialization(
-                          new jsAst.VariableDeclaration('key'),
-                          null)]),
-                  js('table'),
-                  new jsAst.ExpressionStatement(
-                      js('$defPropName(Object.prototype, key, table[key])'))))(
-              new jsAst.ObjectInitializer(objectProperties));
+      jsAst.Expression init = js(r'''
+          (function(table) {
+            for(var key in table)
+              #(Object.prototype, key, table[key]);
+           })(#)''',
+          [ defPropFunction,
+            new jsAst.ObjectInitializer(objectProperties)]);
 
       if (emitter.compiler.enableMinification) targetBuffer.add(';');
       targetBuffer.add(jsAst.prettyPrint(

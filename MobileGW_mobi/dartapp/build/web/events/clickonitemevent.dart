@@ -14,7 +14,7 @@ var close = DivElement;
 Stream<js.Proxy> chat_stream;
 var payable =false;
 
-show(Event e,String uuid,List<Character> forMarkList,bool payable,MobileClient mobileClient) {
+show(Event e,String uuid,List<Character> forMarkList,bool payable,MobileClient mobileClient,String provider) {
   
   var itemid = int.parse((e.currentTarget as Element).id);
   var item = forMarkList[itemid];
@@ -36,15 +36,16 @@ show(Event e,String uuid,List<Character> forMarkList,bool payable,MobileClient m
   
   if (payable) {
     
+    
     var directnumberEl   =querySelector('#directnumber');
     directnumberEl.classes.clear();
     directnumberEl.style.marginLeft="10px";
     directnumberEl.style.marginTop="5px";
     directnumberEl.text = item.name+": suora puhelinnumero -> ";
     ButtonElement buttonElement = new ButtonElement();
-    buttonElement.innerHtml="1 &euro;";
+    buttonElement.innerHtml="0.87 &euro;";
     buttonElement.classes.add("btn btn-danger");
-    buttonElement.onClick.listen((event)=> paymentfornumber.pay(event,uuid,item,mobileClient, 100));
+    buttonElement.onClick.listen((event)=> paymentfornumber.pay(event,uuid,item,mobileClient, 87,provider));
     directnumberEl.append(buttonElement);
    
   }

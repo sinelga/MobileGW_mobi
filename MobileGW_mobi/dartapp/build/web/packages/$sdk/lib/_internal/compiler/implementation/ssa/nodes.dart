@@ -54,6 +54,7 @@ abstract class HVisitor<R> {
   R visitParameterValue(HParameterValue node);
   R visitPhi(HPhi node);
   R visitRangeConversion(HRangeConversion node);
+  R visitReadModifyWrite(HReadModifyWrite node);
   R visitReturn(HReturn node);
   R visitShiftLeft(HShiftLeft node);
   R visitShiftRight(HShiftRight node);
@@ -181,6 +182,13 @@ class HGraph {
       entry.addAtExit(result);
     }
     return result;
+  }
+
+  HConstant addDeferredConstant(Constant constant, PrefixElement prefix,
+                                Compiler compiler) {
+    Constant wrapper = new DeferredConstant(constant, prefix);
+    compiler.deferredLoadTask.registerConstantDeferredUse(wrapper, prefix);
+    return addConstant(wrapper, compiler);
   }
 
   HConstant addConstantInt(int i, Compiler compiler) {
@@ -321,6 +329,7 @@ class HBaseVisitor extends HGraphVisitor implements HVisitor {
   visitMultiply(HMultiply node) => visitBinaryArithmetic(node);
   visitParameterValue(HParameterValue node) => visitLocalValue(node);
   visitRangeConversion(HRangeConversion node) => visitCheck(node);
+  visitReadModifyWrite(HReadModifyWrite node) => visitInstruction(node);
   visitReturn(HReturn node) => visitControlFlow(node);
   visitShiftLeft(HShiftLeft node) => visitBinaryBitOp(node);
   visitShiftRight(HShiftRight node) => visitBinaryBitOp(node);
@@ -814,7 +823,6 @@ abstract class HInstruction implements Spannable {
 
   bool useGvn() => _useGvn;
   void setUseGvn() { _useGvn = true; }
-  void clearUseGvn() { _useGvn = false; }
 
   bool get isMovable => useGvn();
 
@@ -829,14 +837,14 @@ abstract class HInstruction implements Spannable {
         && !canThrow();
   }
 
-  // Overridden by [HCheck] to return the actual non-[HCheck]
-  // instruction it checks against.
+  /// Overridden by [HCheck] to return the actual non-[HCheck]
+  /// instruction it checks against.
   HInstruction nonCheck() => this;
 
-  // Can this node throw an exception?
+  /// Can this node throw an exception?
   bool canThrow() => false;
 
-  // Does this node potentially affect control flow.
+  /// Does this node potentially affect control flow.
   bool isControlFlow() => false;
 
   bool isExact() => instructionType.isExact || isNull();
@@ -858,8 +866,13 @@ abstract class HInstruction implements Spannable {
 
   bool canBePrimitiveNumber(Compiler compiler) {
     JavaScriptBackend backend = compiler.backend;
+    // TODO(sra): It should be possible to test only jsDoubleClass and
+    // jsUInt31Class, since all others are superclasses of these two.
     return instructionType.contains(backend.jsNumberClass, compiler)
         || instructionType.contains(backend.jsIntClass, compiler)
+        || instructionType.contains(backend.jsPositiveIntClass, compiler)
+        || instructionType.contains(backend.jsUInt32Class, compiler)
+        || instructionType.contains(backend.jsUInt31Class, compiler)
         || instructionType.contains(backend.jsDoubleClass, compiler);
   }
 
@@ -1214,7 +1227,7 @@ abstract class HInstruction implements Spannable {
     // instructions with generics. It has the generic type context
     // available.
     assert(type.kind != TypeKind.TYPE_VARIABLE);
-    assert(type.treatAsRaw || type.kind == TypeKind.FUNCTION);
+    assert(type.treatAsRaw || type.isFunctionType);
     if (type.isDynamic) return this;
     // The type element is either a class or the void element.
     Element element = type.element;
@@ -1386,7 +1399,7 @@ abstract class HInvokeDynamic extends HInvoke {
 class HInvokeClosure extends HInvokeDynamic {
   HInvokeClosure(Selector selector, List<HInstruction> inputs, TypeMask type)
     : super(selector, null, inputs, type) {
-    assert(selector.isClosureCall());
+    assert(selector.isClosureCall);
   }
   accept(HVisitor visitor) => visitor.visitInvokeClosure(this);
 }
@@ -1499,7 +1512,7 @@ class HFieldGet extends HFieldAccess {
             {bool isAssignable})
       : this.isAssignable = (isAssignable != null)
             ? isAssignable
-            : element.isAssignable(),
+            : element.isAssignable,
         super(element, <HInstruction>[receiver], type) {
     sideEffects.clearAllSideEffects();
     sideEffects.clearAllDependencies();
@@ -1516,7 +1529,7 @@ class HFieldGet extends HFieldAccess {
     // [HFieldGet].
     JavaScriptBackend backend = compiler.backend;
     bool interceptor =
-        backend.isInterceptorClass(sourceElement.getEnclosingClass());
+        backend.isInterceptorClass(sourceElement.enclosingClass);
     return interceptor && sourceElement is ThisElement;
   }
 
@@ -1557,6 +1570,58 @@ class HFieldSet extends HFieldAccess {
   String toString() => "FieldSet $element";
 }
 
+/**
+ * HReadModifyWrite is a late stage instruction for a field (property) update
+ * via an assignment operation or pre- or post-increment.
+ */
+class HReadModifyWrite extends HLateInstruction {
+  static const ASSIGN_OP = 0;
+  static const PRE_OP = 1;
+  static const POST_OP = 2;
+  final Element element;
+  final String jsOp;
+  final int opKind;
+
+   HReadModifyWrite._(Element this.element, this.jsOp, this.opKind,
+      List<HInstruction> inputs, TypeMask type)
+      : super(inputs, type) {
+    sideEffects.clearAllSideEffects();
+    sideEffects.clearAllDependencies();
+    sideEffects.setChangesInstanceProperty();
+    sideEffects.setDependsOnInstancePropertyStore();
+  }
+
+  HReadModifyWrite.assignOp(Element element, String jsOp,
+      HInstruction receiver, HInstruction operand, TypeMask type)
+      : this._(element, jsOp, ASSIGN_OP,
+               <HInstruction>[receiver, operand], type);
+
+  HReadModifyWrite.preOp(Element element, String jsOp,
+      HInstruction receiver, TypeMask type)
+      : this._(element, jsOp, PRE_OP, <HInstruction>[receiver], type);
+
+  HReadModifyWrite.postOp(Element element, String jsOp,
+      HInstruction receiver, TypeMask type)
+      : this._(element, jsOp, POST_OP, <HInstruction>[receiver], type);
+
+  HInstruction get receiver => inputs[0];
+
+  bool get isPreOp => opKind == PRE_OP;
+  bool get isPostOp => opKind == POST_OP;
+  bool get isAssignOp => opKind == ASSIGN_OP;
+
+  bool canThrow() => receiver.canBeNull();
+
+  HInstruction getDartReceiver(Compiler compiler) => receiver;
+  bool onlyThrowsNSM() => true;
+
+  HInstruction get value => inputs[1];
+  accept(HVisitor visitor) => visitor.visitReadModifyWrite(this);
+
+  bool isJsStatement() => isAssignOp;
+  String toString() => "ReadModifyWrite $jsOp $opKind $element";
+}
+
 class HLocalGet extends HFieldAccess {
   // No need to use GVN for a [HLocalGet], it is just a local
   // access.
@@ -1581,12 +1646,12 @@ class HLocalSet extends HFieldAccess {
 }
 
 class HForeign extends HInstruction {
-  final js.Node codeAst;
+  final js.Template codeTemplate;
   final bool isStatement;
   final bool _canThrow;
   final native.NativeBehavior nativeBehavior;
 
-  HForeign(this.codeAst,
+  HForeign(this.codeTemplate,
            TypeMask type,
            List<HInstruction> inputs,
            {this.isStatement: false,
@@ -1602,11 +1667,11 @@ class HForeign extends HInstruction {
     if (effects != null) sideEffects.add(effects);
   }
 
-  HForeign.statement(codeAst, List<HInstruction> inputs,
+  HForeign.statement(codeTemplate, List<HInstruction> inputs,
                      SideEffects effects,
                      native.NativeBehavior nativeBehavior,
                      TypeMask type)
-      : this(codeAst, type, inputs, isStatement: true,
+      : this(codeTemplate, type, inputs, isStatement: true,
              effects: effects, nativeBehavior: nativeBehavior);
 
   accept(HVisitor visitor) => visitor.visitForeign(this);
@@ -1997,7 +2062,7 @@ class HThis extends HParameterValue {
   bool isCodeMotionInvariant() => true;
   bool isInterceptor(Compiler compiler) {
     JavaScriptBackend backend = compiler.backend;
-    return backend.isInterceptorClass(sourceElement.getEnclosingClass());
+    return backend.isInterceptorClass(sourceElement.enclosingClass);
   }
 }
 
@@ -2125,7 +2190,7 @@ class HStatic extends HInstruction {
     assert(invariant(this, element.isDeclaration));
     sideEffects.clearAllSideEffects();
     sideEffects.clearAllDependencies();
-    if (element.isAssignable()) {
+    if (element.isAssignable) {
       sideEffects.setDependsOnStaticPropertyStore();
     }
     setUseGvn();
@@ -2137,7 +2202,7 @@ class HStatic extends HInstruction {
   int typeCode() => HInstruction.STATIC_TYPECODE;
   bool typeEquals(other) => other is HStatic;
   bool dataEquals(HStatic other) => element == other.element;
-  bool isCodeMotionInvariant() => !element.isAssignable();
+  bool isCodeMotionInvariant() => !element.isAssignable;
 }
 
 class HInterceptor extends HInstruction {
@@ -2431,12 +2496,12 @@ class HTypeConversion extends HCheck {
   }
 
   bool get hasTypeRepresentation {
-    return typeExpression.kind == TypeKind.INTERFACE && inputs.length > 1;
+    return typeExpression.isInterfaceType && inputs.length > 1;
   }
   HInstruction get typeRepresentation => inputs[1];
 
   bool get hasContext {
-    return typeExpression.kind == TypeKind.FUNCTION && inputs.length > 1;
+    return typeExpression.isFunctionType && inputs.length > 1;
   }
   HInstruction get context => inputs[1];
 
@@ -2493,6 +2558,8 @@ class HTypeKnown extends HCheck {
   bool isJsStatement() => false;
   bool isControlFlow() => false;
   bool canThrow() => false;
+
+  HInstruction get witness => inputs.length == 2 ? inputs[1] : null;
 
   int typeCode() => HInstruction.TYPE_KNOWN_TYPECODE;
   bool typeEquals(HInstruction other) => other is HTypeKnown;

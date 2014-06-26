@@ -1,13 +1,16 @@
-// Copyright (c) 2013, Iván Zaera Avellón - izaera@gmail.com
-// Use of this source code is governed by a LGPL v3 license.
-// See the LICENSE file for more information.
+// Copyright (c) 2013-present, Iván Zaera Avellón - izaera@gmail.com
+
+// This library is dually licensed under LGPL 3 and MPL 2.0. See file LICENSE for more information.
+
+// This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of
+// the MPL was not distributed with this file, you can obtain one at http://mozilla.org/MPL/2.0/.
 
 library cipher.digests.sha1;
 
 import "dart:typed_data";
 
 import "package:cipher/api.dart";
-import "package:cipher/api/ufixnum.dart";
+import "package:cipher/src/ufixnum.dart";
 import "package:cipher/digests/md4_family_digest.dart";
 
 /// Implementation of SHA-1 digest
@@ -15,183 +18,126 @@ class SHA1Digest extends MD4FamilyDigest implements Digest {
 
   static const _DIGEST_LENGTH = 20;
 
-  Uint32 _H1, _H2, _H3, _H4, _H5;
+  SHA1Digest() :
+    super(Endianness.BIG_ENDIAN, 5, 80);
 
-  var _X = new List<Uint32>(80);
-  int _xOff;
+  final algorithmName = "SHA-1";
+  final digestSize = _DIGEST_LENGTH;
 
-  SHA1Digest() {
-    reset();
-  }
-
-  String get algorithmName => "SHA-1";
-
-  int get digestSize => _DIGEST_LENGTH;
-
-  void reset() {
-    super.reset();
-
-    _H1 = new Uint32(0x67452301);
-    _H2 = new Uint32(0xefcdab89);
-    _H3 = new Uint32(0x98badcfe);
-    _H4 = new Uint32(0x10325476);
-    _H5 = new Uint32(0xc3d2e1f0);
-
-    // Reset buffer
-    _xOff = 0;
-    _X.fillRange( 0, _X.length, new Uint32(0) );
-  }
-
-  int doFinal(Uint8List out, int outOff) {
-    finish();
-
-    _H1.toBigEndian(out, outOff);
-    _H2.toBigEndian(out, outOff+4);
-    _H3.toBigEndian(out, outOff+8);
-    _H4.toBigEndian(out, outOff+12);
-    _H5.toBigEndian(out, outOff+16);
-
-    reset();
-
-    return _DIGEST_LENGTH;
-  }
-
-  void processWord( Uint8List inp, int inpOff ) {
-    var n = new Uint32.fromBigEndian(inp, inpOff);
-    _X[_xOff] = n;
-
-    if( ++_xOff==16 ) {
-      processBlock();
-    }
-  }
-
-  void processLength(Uint64 bitLength) {
-    if( _xOff>14 ) {
-      processBlock();
-    }
-    packLittleEndianLength(bitLength, _X, 14);
+  void resetState() {
+    state[0] = 0x67452301;
+    state[1] = 0xefcdab89;
+    state[2] = 0x98badcfe;
+    state[3] = 0x10325476;
+    state[4] = 0xc3d2e1f0;
   }
 
   void processBlock() {
     // expand 16 word block into 80 word block.
-    for( var i=16 ; i<80 ; i++ ) {
-      var t = _X[i - 3] ^ _X[i - 8] ^ _X[i - 14] ^ _X[i - 16];
-      _X[i] = t << 1 | t >> 31;
+    for (var i = 16; i < 80; i++) {
+      var t = buffer[i - 3] ^ buffer[i - 8] ^ buffer[i - 14] ^ buffer[i - 16];
+      buffer[i] = rotl32(t, 1);
     }
 
     // set up working variables.
-    Uint32 A = _H1;
-    Uint32 B = _H2;
-    Uint32 C = _H3;
-    Uint32 D = _H4;
-    Uint32 E = _H5;
+    var A = state[0];
+    var B = state[1];
+    var C = state[2];
+    var D = state[3];
+    var E = state[4];
 
-    // round 1
     var idx = 0;
 
-    for( var j=0 ; j<4 ; j++ ) {
+    // round 1
+    for (var j = 0; j < 4; j++) {
+      E = clip32(E + rotl32(A, 5) + _f(B, C, D) + buffer[idx++] + _Y1);
+      B = rotl32(B, 30);
 
-      // E = rotateLeft(A, 5) + f(B, C, D) + E + X[idx++] + Y1
-      // B = rotateLeft(B, 30)
-      E += (A << 5 | A >> 27) + _f(B, C, D) + _X[idx++] + Y1;
-      B = B << 30 | B >> 2;
+      D = clip32(D + rotl32(E, 5) + _f(A, B, C) + buffer[idx++] + _Y1);
+      A = rotl32(A, 30);
 
-      D += (E << 5 | E >> 27) + _f(A, B, C) + _X[idx++] + Y1;
-      A = A << 30 | A >> 2;
+      C = clip32(C + rotl32(D, 5) + _f(E, A, B) + buffer[idx++] + _Y1);
+      E = rotl32(E, 30);
 
-      C += (D << 5 | D >> 27) + _f(E, A, B) + _X[idx++] + Y1;
-      E = E << 30 | E >> 2;
+      B = clip32(B + rotl32(C, 5) + _f(D, E, A) + buffer[idx++] + _Y1);
+      D = rotl32(D, 30);
 
-      B += (C << 5 | C >> 27) + _f(D, E, A) + _X[idx++] + Y1;
-      D = D << 30 | D >> 2;
-
-      A += (B << 5 | B >> 27) + _f(C, D, E) + _X[idx++] + Y1;
-      C = C << 30 | C >> 2;
+      A = clip32(A + rotl32(B, 5) + _f(C, D, E) + buffer[idx++] + _Y1);
+      C = rotl32(C, 30);
     }
 
     // round 2
-    for (int j=0 ; j<4 ; j++ ) {
-      // E = rotateLeft(A, 5) + h(B, C, D) + E + X[idx++] + Y2
-      // B = rotateLeft(B, 30)
-      E += (A << 5 | A >> 27) + _h(B, C, D) + _X[idx++] + Y2;
-      B = B << 30 | B >> 2;
+    for (var j = 0; j < 4; j++) {
+      E = clip32(E + rotl32(A, 5) + _h(B, C, D) + buffer[idx++] + _Y2);
+      B = rotl32(B, 30);
 
-      D += (E << 5 | E >> 27) + _h(A, B, C) + _X[idx++] + Y2;
-      A = A << 30 | A >> 2;
+      D = clip32(D + rotl32(E, 5) + _h(A, B, C) + buffer[idx++] + _Y2);
+      A = rotl32(A, 30);
 
-      C += (D << 5 | D >> 27) + _h(E, A, B) + _X[idx++] + Y2;
-      E = E << 30 | E >> 2;
+      C = clip32(C + rotl32(D, 5) + _h(E, A, B) + buffer[idx++] + _Y2);
+      E = rotl32(E, 30);
 
-      B += (C << 5 | C >> 27) + _h(D, E, A) + _X[idx++] + Y2;
-      D = D << 30 | D >> 2;
+      B = clip32(B + rotl32(C, 5) + _h(D, E, A) + buffer[idx++] + _Y2);
+      D = rotl32(D, 30);
 
-      A += (B << 5 | B >> 27) + _h(C, D, E) + _X[idx++] + Y2;
-      C = C << 30 | C >> 2;
+      A = clip32(A + rotl32(B, 5) + _h(C, D, E) + buffer[idx++] + _Y2);
+      C = rotl32(C, 30);
     }
 
     // round 3
-    for( var j=0 ; j<4 ; j++ ) {
-      // E = rotateLeft(A, 5) + g(B, C, D) + E + X[idx++] + Y3
-      // B = rotateLeft(B, 30)
-      E += (A << 5 | A >> 27) + _g(B, C, D) + _X[idx++] + Y3;
-      B = B << 30 | B >> 2;
+    for (var j = 0; j < 4; j++) {
+      E = clip32(E + rotl32(A, 5) + _g(B, C, D) + buffer[idx++] + _Y3);
+      B = rotl32(B, 30);
 
-      D += (E << 5 | E >> 27) + _g(A, B, C) + _X[idx++] + Y3;
-      A = A << 30 | A >> 2;
+      D = clip32(D + rotl32(E, 5) + _g(A, B, C) + buffer[idx++] + _Y3);
+      A = rotl32(A, 30);
 
-      C += (D << 5 | D >> 27) + _g(E, A, B) + _X[idx++] + Y3;
-      E = E << 30 | E >> 2;
+      C = clip32(C + rotl32(D, 5) + _g(E, A, B) + buffer[idx++] + _Y3);
+      E = rotl32(E, 30);
 
-      B += (C << 5 | C >> 27) + _g(D, E, A) + _X[idx++] + Y3;
-      D = D << 30 | D >> 2;
+      B = clip32(B + rotl32(C, 5) + _g(D, E, A) + buffer[idx++] + _Y3);
+      D = rotl32(D, 30);
 
-      A += (B << 5 | B >> 27) + _g(C, D, E) + _X[idx++] + Y3;
-      C = C << 30 | C >> 2;
+      A = clip32(A + rotl32(B, 5) + _g(C, D, E) + buffer[idx++] + _Y3);
+      C = rotl32(C, 30);
     }
 
     // round 4
-    for( int j=0 ; j<=3 ; j++ ) {
-      // E = rotateLeft(A, 5) + h(B, C, D) + E + X[idx++] + Y4
-      // B = rotateLeft(B, 30)
-      E += (A << 5 | A >> 27) + _h(B, C, D) + _X[idx++] + Y4;
-      B = B << 30 | B >> 2;
+    for (var j = 0; j < 4; j++) {
+      E = clip32(E + rotl32(A, 5) + _h(B, C, D) + buffer[idx++] + _Y4);
+      B = rotl32(B, 30);
 
-      D += (E << 5 | E >> 27) + _h(A, B, C) + _X[idx++] + Y4;
-      A = A << 30 | A >> 2;
+      D = clip32(D + rotl32(E, 5) + _h(A, B, C) + buffer[idx++] + _Y4);
+      A = rotl32(A, 30);
 
-      C += (D << 5 | D >> 27) + _h(E, A, B) + _X[idx++] + Y4;
-      E = E << 30 | E >> 2;
+      C = clip32(C + rotl32(D, 5) + _h(E, A, B) + buffer[idx++] + _Y4);
+      E = rotl32(E, 30);
 
-      B += (C << 5 | C >> 27) + _h(D, E, A) + _X[idx++] + Y4;
-      D = D << 30 | D >> 2;
+      B = clip32(B + rotl32(C, 5) + _h(D, E, A) + buffer[idx++] + _Y4);
+      D = rotl32(D, 30);
 
-      A += (B << 5 | B >> 27) + _h(C, D, E) + _X[idx++] + Y4;
-      C = C << 30 | C >> 2;
+      A = clip32(A + rotl32(B, 5) + _h(C, D, E) + buffer[idx++] + _Y4);
+      C = rotl32(C, 30);
     }
 
-
-    _H1 += A;
-    _H2 += B;
-    _H3 += C;
-    _H4 += D;
-    _H5 += E;
-
-    // reset start of the buffer.
-    _xOff = 0;
-    _X.fillRange(0, 16, new Uint32(0));
+    state[0] = clip32(state[0] + A);
+    state[1] = clip32(state[1] + B);
+    state[2] = clip32(state[2] + C);
+    state[3] = clip32(state[3] + D);
+    state[4] = clip32(state[4] + E);
   }
 
   // Additive constants
-  static final Y1 = 0x5a827999;
-  static final Y2 = 0x6ed9eba1;
-  static final Y3 = 0x8f1bbcdc;
-  static final Y4 = 0xca62c1d6;
+  static const _Y1 = 0x5a827999;
+  static const _Y2 = 0x6ed9eba1;
+  static const _Y3 = 0x8f1bbcdc;
+  static const _Y4 = 0xca62c1d6;
 
-  Uint32 _f( Uint32 u, Uint32 v, Uint32 w ) => ((u & v) | ((~u) & w));
+  int _f(int u, int v, int w) => ((u & v) | ((~u) & w));
 
-  Uint32 _h( Uint32 u, Uint32 v, Uint32 w ) => (u ^ v ^ w);
+  int _h(int u, int v, int w) => (u ^ v ^ w);
 
-  Uint32 _g( Uint32 u, Uint32 v, Uint32 w ) => ((u & v) | (u & w) | (v & w));
+  int _g(int u, int v, int w) => ((u & v) | (u & w) | (v & w));
 
 }
 

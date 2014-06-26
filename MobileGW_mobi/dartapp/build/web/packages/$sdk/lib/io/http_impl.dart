@@ -262,6 +262,13 @@ class _HttpClientResponse
                                        {Function onError,
                                         void onDone(),
                                         bool cancelOnError}) {
+    if (_incoming.upgraded) {
+      // If upgraded, the connection is already 'removed' form the client.
+      // Since listening to upgraded data is 'bogus', simply close and
+      // return empty stream subscription.
+      _httpRequest._httpClientConnection.destroy();
+      return new Stream.fromIterable([]).listen(null, onDone: onDone);
+    }
     var stream = _incoming;
     if (headers.value(HttpHeaders.CONTENT_ENCODING) == "gzip") {
       stream = stream.transform(GZIP.decoder);
@@ -310,7 +317,8 @@ class _HttpClientResponse
     }
 
     _Credentials findCredentials(_AuthenticationScheme scheme) {
-      return proxyAuth ? _httpClient._findProxyCredentials(_httpRequest._proxy, scheme)
+      return proxyAuth ? _httpClient._findProxyCredentials(_httpRequest._proxy,
+                                                           scheme)
                        : _httpClient._findCredentials(_httpRequest.uri, scheme);
     }
 
@@ -411,6 +419,8 @@ abstract class _HttpOutboundMessage<T> extends _IOSinkImpl {
   // requests and in error handling.
   bool _encodingSet = false;
 
+  bool _bufferOutput = true;
+
   final Uri _uri;
   final _HttpOutgoing _outgoing;
 
@@ -441,6 +451,13 @@ abstract class _HttpOutboundMessage<T> extends _IOSinkImpl {
     headers.persistentConnection = p;
   }
 
+  bool get bufferOutput => _bufferOutput;
+  void set bufferOutput(bool bufferOutput) {
+    if (_outgoing.headersWritten) throw new StateError("Header already sent");
+    _bufferOutput = bufferOutput;
+  }
+
+
   Encoding get encoding {
     if (_encodingSet && _outgoing.headersWritten) {
       return _encoding;
@@ -468,6 +485,8 @@ abstract class _HttpOutboundMessage<T> extends _IOSinkImpl {
   }
 
   void _writeHeader();
+
+  bool get _isConnectionClosed => false;
 }
 
 
@@ -487,6 +506,8 @@ class _HttpResponse extends _HttpOutboundMessage<HttpResponse>
       : super(uri, protocolVersion, outgoing) {
     if (serverHeader != null) headers._add('server', serverHeader);
   }
+
+  bool get _isConnectionClosed => _httpRequest._httpConnection._isClosing;
 
   List<Cookie> get cookies {
     if (_cookies == null) _cookies = new List<Cookie>();
@@ -512,13 +533,18 @@ class _HttpResponse extends _HttpOutboundMessage<HttpResponse>
     return close();
   }
 
-  Future<Socket> detachSocket() {
+  Future<Socket> detachSocket({bool writeHeaders: true}) {
     if (_outgoing.headersWritten) throw new StateError("Headers already sent");
     deadline = null;  // Be sure to stop any deadline.
     var future = _httpRequest._httpConnection.detachSocket();
-    var headersFuture = _outgoing.writeHeaders(drainRequest: false,
-                                               setOutgoing: false);
-    assert(headersFuture == null);
+    if (writeHeaders) {
+      var headersFuture = _outgoing.writeHeaders(drainRequest: false,
+                                                 setOutgoing: false);
+      assert(headersFuture == null);
+    } else {
+      // Imitate having written the headers.
+      _outgoing.headersWritten = true;
+    }
     // Close connection so the socket is 'free'.
     close();
     done.catchError((_) {
@@ -538,8 +564,7 @@ class _HttpResponse extends _HttpOutboundMessage<HttpResponse>
 
     if (_deadline == null) return;
     _deadlineTimer = new Timer(_deadline, () {
-      _outgoing._socketError = true;
-      _outgoing.socket.destroy();
+      _httpRequest._httpConnection.destroy();
     });
   }
 
@@ -919,7 +944,7 @@ class _HttpOutgoing implements StreamConsumer<List<int>> {
     bool gzip = false;
     if (isServerSide) {
       var response = outbound;
-      if (outbound.headers.chunkedTransferEncoding) {
+      if (outbound.bufferOutput && outbound.headers.chunkedTransferEncoding) {
         List acceptEncodings =
             response._httpRequest.headers[HttpHeaders.ACCEPT_ENCODING];
         List contentEncoding = outbound.headers[HttpHeaders.CONTENT_ENCODING];
@@ -1043,6 +1068,7 @@ class _HttpOutgoing implements StreamConsumer<List<int>> {
     // If we earlier saw an error, return immediate. The notification to
     // _Http*Connection is already done.
     if (_socketError) return new Future.value(outbound);
+    if (outbound._isConnectionClosed) return new Future.value(outbound);
     if (!headersWritten && !ignoreBody) {
       if (outbound.headers.contentLength == -1) {
         // If no body was written, ignoreBody is false (it's not a HEAD
@@ -1149,6 +1175,10 @@ class _HttpOutgoing implements StreamConsumer<List<int>> {
        outbound is HttpResponse;
 
   void _addGZipChunk(chunk, void add(List<int> data)) {
+    if (!outbound.bufferOutput) {
+      add(chunk);
+      return;
+    }
     if (chunk.length > _gzipBuffer.length - _gzipBufferLength) {
       add(new Uint8List.view(
           _gzipBuffer.buffer, 0, _gzipBufferLength));
@@ -1166,6 +1196,17 @@ class _HttpOutgoing implements StreamConsumer<List<int>> {
   }
 
   void _addChunk(chunk, void add(List<int> data)) {
+    if (!outbound.bufferOutput) {
+      if (_buffer != null) {
+        // If _buffer is not null, we have not written the header yet. Write
+        // it now.
+        add(new Uint8List.view(_buffer.buffer, 0, _length));
+        _buffer = null;
+        _length = 0;
+      }
+      add(chunk);
+      return;
+    }
     if (chunk.length > _buffer.length - _length) {
       add(new Uint8List.view(_buffer.buffer, 0, _length));
       _buffer = new Uint8List(_OUTGOING_BUFFER_SIZE);
@@ -1325,6 +1366,12 @@ class _HttpClientConnection {
               .then((incoming) {
                 _currentUri = null;
                 incoming.dataDone.then((closing) {
+                  if (incoming.upgraded) {
+                    _httpClient._connectionClosed(this);
+                    startTimer();
+                    return;
+                  }
+                  if (closed) return;
                   if (!closing &&
                       !_dispose &&
                       incoming.headers.persistentConnection &&
@@ -1459,22 +1506,136 @@ class _HttpClientConnection {
   }
 }
 
-class _ConnnectionInfo {
+class _ConnectionInfo {
   final _HttpClientConnection connection;
   final _Proxy proxy;
 
-  _ConnnectionInfo(this.connection, this.proxy);
+  _ConnectionInfo(this.connection, this.proxy);
+}
+
+
+class _ConnectionTarget {
+  // Unique key for this connection target.
+  final String key;
+  final String host;
+  final int port;
+  final bool isSecure;
+  final Set<_HttpClientConnection> _idle = new HashSet();
+  final Set<_HttpClientConnection> _active = new HashSet();
+  final Queue _pending = new ListQueue();
+  int _connecting = 0;
+
+  _ConnectionTarget(this.key, this.host, this.port, this.isSecure);
+
+  bool get isEmpty => _idle.isEmpty && _active.isEmpty && _connecting == 0;
+
+  bool get hasIdle => _idle.isNotEmpty;
+
+  bool get hasActive => _active.isNotEmpty || _connecting > 0;
+
+  _HttpClientConnection takeIdle() {
+    assert(hasIdle);
+    _HttpClientConnection connection = _idle.first;
+    _idle.remove(connection);
+    connection.stopTimer();
+    _active.add(connection);
+    return connection;
+  }
+
+  _checkPending() {
+    if (_pending.isNotEmpty) {
+      _pending.removeFirst()();
+    }
+  }
+
+  void addNewActive(_HttpClientConnection connection) {
+    _active.add(connection);
+  }
+
+  void returnConnection(_HttpClientConnection connection) {
+    assert(_active.contains(connection));
+    _active.remove(connection);
+    _idle.add(connection);
+    connection.startTimer();
+    _checkPending();
+  }
+
+  void connectionClosed(_HttpClientConnection connection) {
+    assert(!_active.contains(connection) || !_idle.contains(connection));
+    _active.remove(connection);
+    _idle.remove(connection);
+    _checkPending();
+  }
+
+  void close(bool force) {
+    for (var c in _idle.toList()) {
+      c.close();
+    }
+    if (force) {
+      for (var c in _active.toList()) {
+        c.destroy();
+      }
+    }
+  }
+
+  Future<_ConnectionInfo> connect(String uriHost,
+                                   int uriPort,
+                                   _Proxy proxy,
+                                   _HttpClient client) {
+    if (hasIdle) {
+      var connection = takeIdle();
+      client._updateTimers();
+      return new Future.value(new _ConnectionInfo(connection, proxy));
+    }
+    if (client.maxConnectionsPerHost != null &&
+        _active.length + _connecting >= client.maxConnectionsPerHost) {
+      var completer = new Completer();
+      _pending.add(() {
+        connect(uriHost, uriPort, proxy, client)
+            .then(completer.complete, onError: completer.completeError);
+      });
+      return completer.future;
+    }
+    var currentBadCertificateCallback = client._badCertificateCallback;
+    bool callback(X509Certificate certificate) =>
+        currentBadCertificateCallback == null ? false :
+        currentBadCertificateCallback(certificate, uriHost, uriPort);
+    Future socketFuture = (isSecure && proxy.isDirect
+        ? SecureSocket.connect(host,
+                               port,
+                               sendClientCertificate: true,
+                               onBadCertificate: callback)
+        : Socket.connect(host, port));
+    _connecting++;
+    return socketFuture.then((socket) {
+        _connecting--;
+        socket.setOption(SocketOption.TCP_NODELAY, true);
+        var connection = new _HttpClientConnection(key, socket, client);
+        if (isSecure && !proxy.isDirect) {
+          connection._dispose = true;
+          return connection.createProxyTunnel(uriHost, uriPort, proxy, callback)
+              .then((tunnel) {
+                client._getConnectionTarget(uriHost, uriPort, true)
+                    .addNewActive(tunnel);
+                return new _ConnectionInfo(tunnel, proxy);
+              });
+        } else {
+          addNewActive(connection);
+          return new _ConnectionInfo(connection, proxy);
+        }
+      }, onError: (error) {
+        _connecting--;
+        _checkPending();
+        throw error;
+      });
+  }
 }
 
 
 class _HttpClient implements HttpClient {
-  // TODO(ajohnsen): Use eviction timeout.
   bool _closing = false;
-
-  final Map<String, Set<_HttpClientConnection>> _idleConnections
-      = new HashMap<String, Set<_HttpClientConnection>>();
-  final Set<_HttpClientConnection> _activeConnections
-      = new HashSet<_HttpClientConnection>();
+  final Map<String, _ConnectionTarget> _connectionTargets
+      = new HashMap<String, _ConnectionTarget>();
   final List<_Credentials> _credentials = [];
   final List<_ProxyCredentials> _proxyCredentials = [];
   Function _authenticate;
@@ -1487,16 +1648,19 @@ class _HttpClient implements HttpClient {
 
   Duration get idleTimeout => _idleTimeout;
 
+  int maxConnectionsPerHost;
+
   String userAgent = _getHttpVersion();
 
   void set idleTimeout(Duration timeout) {
     _idleTimeout = timeout;
-    _idleConnections.values.forEach(
-        (l) => l.forEach((c) {
-          // Reset timer. This is fine, as it's not happening often.
-          c.stopTimer();
-          c.startTimer();
-        }));
+    for (var c in _connectionTargets.values) {
+      for (var idle in c.idle) {
+        // Reset timer. This is fine, as it's not happening often.
+        idle.stopTimer();
+        idle.startTimer();
+      }
+    }
   }
 
   set badCertificateCallback(bool callback(X509Certificate cert,
@@ -1520,47 +1684,42 @@ class _HttpClient implements HttpClient {
     return _openUrl(method, url);
   }
 
-  Future<HttpClientRequest> get(String host,
-                                int port,
-                                String path) {
-    return open("get", host, port, path);
-  }
+  Future<HttpClientRequest> get(String host, int port, String path)
+      => open("get", host, port, path);
 
-  Future<HttpClientRequest> getUrl(Uri url) {
-    return _openUrl("get", url);
-  }
+  Future<HttpClientRequest> getUrl(Uri url) => _openUrl("get", url);
 
-  Future<HttpClientRequest> post(String host,
-                                 int port,
-                                 String path) {
-    return open("post", host, port, path);
-  }
+  Future<HttpClientRequest> post(String host, int port, String path)
+      => open("post", host, port, path);
 
-  Future<HttpClientRequest> postUrl(Uri url) {
-    return _openUrl("post", url);
-  }
+  Future<HttpClientRequest> postUrl(Uri url) => _openUrl("post", url);
+
+  Future<HttpClientRequest> put(String host, int port, String path)
+      => open("put", host, port, path);
+
+  Future<HttpClientRequest> putUrl(Uri url) => _openUrl("put", url);
+
+  Future<HttpClientRequest> delete(String host, int port, String path)
+      => open("delete", host, port, path);
+
+  Future<HttpClientRequest> deleteUrl(Uri url) => _openUrl("delete", url);
+
+  Future<HttpClientRequest> head(String host, int port, String path)
+      => open("head", host, port, path);
+
+  Future<HttpClientRequest> headUrl(Uri url) => _openUrl("head", url);
+
+  Future<HttpClientRequest> patch(String host, int port, String path)
+      => open("patch", host, port, path);
+
+  Future<HttpClientRequest> patchUrl(Uri url) => _openUrl("patch", url);
 
   void close({bool force: false}) {
     _closing = true;
-    // Create flattened copy of _idleConnections, as 'destory' will manipulate
-    // it.
-    var idle = _idleConnections.values.fold(
-        [],
-        (l, e) {
-          l.addAll(e);
-          return l;
-        });
-    idle.forEach((e) {
-      e.close();
-    });
-    assert(_idleConnections.isEmpty);
-    if (force) {
-      for (var connection in _activeConnections.toList()) {
-        connection.destroy();
-      }
-      assert(_activeConnections.isEmpty);
-      _activeConnections.clear();
-    }
+    _connectionTargets.values.toList().forEach((c) => c.close(force));
+    assert(!_connectionTargets.values.any((s) => s.hasIdle));
+    assert(!force ||
+        !_connectionTargets.values.any((s) => s._active.isNotEmpty));
   }
 
   set authenticate(Future<bool> f(Uri url, String scheme, String realm)) {
@@ -1659,38 +1818,33 @@ class _HttpClient implements HttpClient {
 
   // Return a live connection to the idle pool.
   void _returnConnection(_HttpClientConnection connection) {
-    _activeConnections.remove(connection);
-    if (_closing) {
-      connection.close();
-      return;
-    }
-    if (!_idleConnections.containsKey(connection.key)) {
-      _idleConnections[connection.key] = new HashSet();
-    }
-    _idleConnections[connection.key].add(connection);
-    connection.startTimer();
+    _connectionTargets[connection.key].returnConnection(connection);
     _updateTimers();
   }
 
   // Remove a closed connnection from the active set.
   void _connectionClosed(_HttpClientConnection connection) {
     connection.stopTimer();
-    _activeConnections.remove(connection);
-    if (_idleConnections.containsKey(connection.key)) {
-      _idleConnections[connection.key].remove(connection);
-      if (_idleConnections[connection.key].isEmpty) {
-        _idleConnections.remove(connection.key);
+    var connectionTarget = _connectionTargets[connection.key];
+    if (connectionTarget != null) {
+      connectionTarget.connectionClosed(connection);
+      if (connectionTarget.isEmpty) {
+        _connectionTargets.remove(connection.key);
       }
+      _updateTimers();
     }
-    _updateTimers();
   }
 
   void _updateTimers() {
-    if (_activeConnections.isEmpty) {
-      if (!_idleConnections.isEmpty && _noActiveTimer == null) {
+    bool hasActive = _connectionTargets.values.any((t) => t.hasActive);
+    if (!hasActive) {
+      bool hasIdle = _connectionTargets.values.any((t) => t.hasIdle);
+      if (hasIdle && _noActiveTimer == null) {
         _noActiveTimer = new Timer(const Duration(milliseconds: 100), () {
           _noActiveTimer = null;
-          if (_activeConnections.isEmpty) {
+          bool hasActive =
+              _connectionTargets.values.any((t) => t.hasActive);
+          if (!hasActive) {
             close();
             _closing = false;
           }
@@ -1702,60 +1856,28 @@ class _HttpClient implements HttpClient {
     }
   }
 
-  // Get a new _HttpClientConnection, either from the idle pool or created from
-  // a new Socket.
-  Future<_ConnnectionInfo> _getConnection(String uriHost,
+  _ConnectionTarget _getConnectionTarget(String host, int port, bool isSecure) {
+    String key = _HttpClientConnection.makeKey(isSecure, host, port);
+    return _connectionTargets.putIfAbsent(
+        key, () => new _ConnectionTarget(key, host, port, isSecure));
+  }
+
+  // Get a new _HttpClientConnection, from the matching _ConnectionTarget.
+  Future<_ConnectionInfo> _getConnection(String uriHost,
                                           int uriPort,
                                           _ProxyConfiguration proxyConf,
                                           bool isSecure) {
     Iterator<_Proxy> proxies = proxyConf.proxies.iterator;
 
-    Future<_ConnnectionInfo> connect(error) {
+    Future<_ConnectionInfo> connect(error) {
       if (!proxies.moveNext()) return new Future.error(error);
       _Proxy proxy = proxies.current;
       String host = proxy.isDirect ? uriHost: proxy.host;
       int port = proxy.isDirect ? uriPort: proxy.port;
-      String key = _HttpClientConnection.makeKey(isSecure, host, port);
-      if (_idleConnections.containsKey(key)) {
-        var connection = _idleConnections[key].first;
-        _idleConnections[key].remove(connection);
-        if (_idleConnections[key].isEmpty) {
-          _idleConnections.remove(key);
-        }
-        connection.stopTimer();
-        _activeConnections.add(connection);
-        _updateTimers();
-        return new Future.value(new _ConnnectionInfo(connection, proxy));
-      }
-      var currentBadCertificateCallback = _badCertificateCallback;
-      bool callback(X509Certificate certificate) =>
-          currentBadCertificateCallback == null ? false :
-          currentBadCertificateCallback(certificate, uriHost, uriPort);
-      Future socketFuture = (isSecure && proxy.isDirect
-          ? SecureSocket.connect(host,
-                                 port,
-                                 sendClientCertificate: true,
-                                 onBadCertificate: callback)
-          : Socket.connect(host, port));
-      return socketFuture.then((socket) {
-          socket.setOption(SocketOption.TCP_NODELAY, true);
-          var connection = new _HttpClientConnection(key, socket, this);
-          if (isSecure && !proxy.isDirect) {
-            connection._dispose = true;
-            return connection.createProxyTunnel(
-                uriHost, uriPort, proxy, callback)
-                .then((tunnel) {
-                  _activeConnections.add(tunnel);
-                  return new _ConnnectionInfo(tunnel, proxy);
-                });
-          } else {
-            _activeConnections.add(connection);
-            return new _ConnnectionInfo(connection, proxy);
-          }
-        }, onError: (error) {
-          // Continue with next proxy.
-          return connect(error);
-        });
+      return _getConnectionTarget(host, port, isSecure)
+          .connect(uriHost, uriPort, proxy, this)
+          // On error, continue with next proxy.
+          .catchError(connect);
     }
     return connect(new HttpException("No proxies given"));
   }
@@ -1976,7 +2098,12 @@ class _HttpConnection extends LinkedListEntry<_HttpConnection> {
 
 
 // HTTP server waiting for socket connections.
-class _HttpServer extends Stream<HttpRequest> implements HttpServer {
+class _HttpServer
+    extends Stream<HttpRequest> with _ServiceObject
+    implements HttpServer {
+  // Use default Map so we keep order.
+  static Map<int, _HttpServer> _servers = new Map<int, _HttpServer>();
+
   String serverHeader;
 
   Duration _idleTimeout;
@@ -2008,12 +2135,16 @@ class _HttpServer extends Stream<HttpRequest> implements HttpServer {
     _controller = new StreamController<HttpRequest>(sync: true,
                                                     onCancel: close);
     idleTimeout = const Duration(seconds: 120);
+    _servers[_serviceId] = this;
+    _serverSocket._owner = this;
   }
 
   _HttpServer.listenOn(this._serverSocket) : _closeServer = false {
     _controller = new StreamController<HttpRequest>(sync: true,
                                                     onCancel: close);
     idleTimeout = const Duration(seconds: 120);
+    _servers[_serviceId] = this;
+    try { _serverSocket._owner = this; } catch (_) {}
   }
 
   Duration get idleTimeout => _idleTimeout;
@@ -2080,17 +2211,18 @@ class _HttpServer extends Stream<HttpRequest> implements HttpServer {
     for (var c in _idleConnections.toList()) {
       c.destroy();
     }
-    _maybeCloseSessionManager();
+    _maybePerformCleanup();
     return result;
   }
 
-  void _maybeCloseSessionManager() {
+  void _maybePerformCleanup() {
     if (closed &&
         _idleConnections.isEmpty &&
         _activeConnections.isEmpty &&
         _sessionManagerInstance != null) {
       _sessionManagerInstance.close();
       _sessionManagerInstance = null;
+      _servers.remove(_serviceId);
     }
   }
 
@@ -2108,7 +2240,17 @@ class _HttpServer extends Stream<HttpRequest> implements HttpServer {
     _sessionManager.sessionTimeout = timeout;
   }
 
-  void _handleRequest(HttpRequest request) => _controller.add(request);
+  void _handleRequest(_HttpRequest request) {
+    // Delay the request until the isolate's message-queue is handled.
+    // This greatly improves scheduling when a lot of requests are active.
+    Timer.run(() {
+      if (!closed) {
+        _controller.add(request);
+      } else {
+        request._httpConnection.destroy();
+      }
+    });
+  }
 
   void _handleError(error) {
     if (!closed) _controller.addError(error);
@@ -2117,7 +2259,7 @@ class _HttpServer extends Stream<HttpRequest> implements HttpServer {
   void _connectionClosed(_HttpConnection connection) {
     // Remove itself from either idle or active connections.
     connection.unlink();
-    _maybeCloseSessionManager();
+    _maybePerformCleanup();
   }
 
   void _markIdle(_HttpConnection connection) {
@@ -2154,6 +2296,37 @@ class _HttpServer extends Stream<HttpRequest> implements HttpServer {
       assert(conn._isIdle);
     });
     return result;
+  }
+
+  String get _serviceTypePath => 'io/http/servers';
+  String get _serviceTypeName => 'HttpServer';
+
+  Map _toJSON(bool ref) {
+    var r = {
+      'id': _servicePath,
+      'type': _serviceType(ref),
+      'name': '${address.host}:$port',
+      'user_name': '${address.host}:$port',
+    };
+    if (ref) {
+      return r;
+    }
+    try {
+      r['socket'] = _serverSocket._toJSON(true);
+    } catch (_) {
+      r['socket'] = {
+        'id': _servicePath,
+        'type': '@Socket',
+        'name': 'UserSocket',
+        'user_name': 'UserSocket',
+      };
+    }
+    r['port'] = port;
+    r['address'] = address.host;
+    r['active'] = _activeConnections.length;
+    r['idle'] = _idleConnections.length;
+    r['closed'] = closed;
+    return r;
   }
 
   _HttpSessionManager _sessionManagerInstance;
@@ -2278,7 +2451,7 @@ class _HttpConnectionInfo implements HttpConnectionInfo {
 
 class _DetachedSocket extends Stream<List<int>> implements Socket {
   final Stream<List<int>> _incoming;
-  final Socket _socket;
+  final _socket;
 
   _DetachedSocket(this._socket, this._incoming);
 
@@ -2336,6 +2509,9 @@ class _DetachedSocket extends Stream<List<int>> implements Socket {
   bool setOption(SocketOption option, bool enabled) {
     return _socket.setOption(option, enabled);
   }
+
+  Map _toJSON(bool ref) => _socket._toJSON(ref);
+  void set _owner(owner) { _socket._owner = owner; }
 }
 
 

@@ -1,6 +1,9 @@
-// Copyright (c) 2013, Iván Zaera Avellón - izaera@gmail.com
-// Use of this source code is governed by a LGPL v3 license.
-// See the LICENSE file for more information.
+// Copyright (c) 2013-present, Iván Zaera Avellón - izaera@gmail.com
+
+// This library is dually licensed under LGPL 3 and MPL 2.0. See file LICENSE for more information.
+
+// This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of
+// the MPL was not distributed with this file, you can obtain one at http://mozilla.org/MPL/2.0/.
 
 library cipher.signers.ecdsa_signer;
 
@@ -352,16 +355,4 @@ class _RandomKCalculator {
     return k;
   }
 
-}
-
-
-
-
-String formatBytesAsHexString(Uint8List bytes) {
-  var result = new StringBuffer();
-  for( var i=0 ; i<bytes.lengthInBytes ; i++ ) {
-    var part = bytes[i];
-    result.write('${part < 16 ? '0' : ''}${part.toRadixString(16)}');
-  }
-  return result.toString();
 }

@@ -481,15 +481,6 @@ class Printer implements NodeVisitor {
                         newInForInit: inForInit, newAtStatementBegin: false);
   }
 
-  visitSequence(Sequence sequence) {
-    // Note that we only require that the entries are expressions and not
-    // assignments. This means that nested sequences are not put into
-    // parenthesis.
-    visitCommaSeparated(sequence.expressions, EXPRESSION,
-                        newInForInit: false,
-                        newAtStatementBegin: atStatementBegin);
-  }
-
   visitAssignment(Assignment assignment) {
     visitNestedExpression(assignment.leftHandSide, LEFT_HAND_SIDE,
                           newInForInit: inForInit,
@@ -553,7 +544,14 @@ class Printer implements NodeVisitor {
     String op = binary.op;
     int leftPrecedenceRequirement;
     int rightPrecedenceRequirement;
+    bool leftSpace = true;   // left<HERE>op right
     switch (op) {
+      case ',':
+        //  x, (y, z) <=> (x, y), z.
+        leftPrecedenceRequirement = EXPRESSION;
+        rightPrecedenceRequirement = EXPRESSION;
+        leftSpace = false;
+        break;
       case "||":
         leftPrecedenceRequirement = LOGICAL_OR;
         // x || (y || z) <=> (x || y) || z.
@@ -633,7 +631,7 @@ class Printer implements NodeVisitor {
       out(op);
       out(" ");
     } else {
-      spaceOut();
+      if (leftSpace) spaceOut();
       out(op);
       spaceOut();
     }
@@ -872,13 +870,24 @@ class Printer implements NodeVisitor {
     outLn(node.code);
   }
 
-  visitJSExpression(JSExpression node) {
-    compiler.internalError(NO_LOCATION_SPANNABLE,
-        'JSPrinter should never see a JSExpression.');
+  visitInterpolatedNode(InterpolatedNode node) {
+    out('#${node.name}');
   }
 
-  visitInterpolatedExpression(InterpolatedExpression node) {
-    visit(node.value);
+  visitInterpolatedExpression(InterpolatedExpression node) =>
+      visitInterpolatedNode(node);
+
+  visitInterpolatedLiteral(InterpolatedLiteral node) =>
+      visitInterpolatedNode(node);
+
+  visitInterpolatedParameter(InterpolatedParameter node) =>
+      visitInterpolatedNode(node);
+
+  visitInterpolatedSelector(InterpolatedSelector node) =>
+      visitInterpolatedNode(node);
+
+  visitInterpolatedStatement(InterpolatedStatement node) {
+    outLn('#${node.name}');
   }
 
   void visitComment(Comment node) {
@@ -1093,6 +1102,7 @@ class MinifyRenamer implements LocalNamer {
   // use the same namespace for arguments and variables, starting with A, and
   // moving on to a0, a1, etc.
   String declareVariable(String oldName) {
+    if (avoidRenaming(oldName)) return oldName;
     var newName;
     if (variableNumber + parameterNumber < LOWER_CASE_LETTERS) {
       // Variables start from z and go backwards, for better gzipability.
@@ -1106,6 +1116,7 @@ class MinifyRenamer implements LocalNamer {
   }
 
   String declareParameter(String oldName) {
+    if (avoidRenaming(oldName)) return oldName;
     var newName;
     if (variableNumber + parameterNumber < LOWER_CASE_LETTERS) {
       newName = getNameNumber(oldName, parameterNumber);
@@ -1114,6 +1125,14 @@ class MinifyRenamer implements LocalNamer {
     }
     parameterNumber++;
     return newName;
+  }
+
+  bool avoidRenaming(String oldName) {
+    // Variables of this $form$ are used in pattern matching the message of JS
+    // exceptions, so should not be renamed.
+    // TODO(sra): Introduce a way for indicating in the JS text which variables
+    // should not be renamed.
+    return oldName.startsWith(r'$') && oldName.endsWith(r'$');
   }
 
   String getNameNumber(String oldName, int n) {

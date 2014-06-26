@@ -1,13 +1,16 @@
-// Copyright (c) 2013, Iván Zaera Avellón - izaera@gmail.com
-// Use of this source code is governed by a LGPL v3 license.
-// See the LICENSE file for more information.
+// Copyright (c) 2013-present, Iván Zaera Avellón - izaera@gmail.com
+
+// This library is dually licensed under LGPL 3 and MPL 2.0. See file LICENSE for more information.
+
+// This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of
+// the MPL was not distributed with this file, you can obtain one at http://mozilla.org/MPL/2.0/.
 
 library cipher.modes.gctr;
 
 import "dart:typed_data";
 
 import "package:cipher/api.dart";
-import "package:cipher/api/ufixnum.dart";
+import "package:cipher/src/ufixnum.dart";
 import "package:cipher/params/parameters_with_iv.dart";
 import "package:cipher/block/base_block_cipher.dart";
 
@@ -131,21 +134,11 @@ class GCTRBlockCipher extends BaseBlockCipher {
   }
 
   int _bytesToint( Uint8List inp, int inpOff ) {
-    return new Uint32.fromLittleEndian( inp, inpOff ).toInt();
-    /*
-    return  ((inp[inpOff + 3] << 24) & 0xff000000) + ((inp[inpOff + 2] << 16) & 0xff0000) +
-        ((inp[inpOff + 1] << 8) & 0xff00) + (inp[inpOff] & 0xff);
-    */
+    return unpack32(inp, inpOff, Endianness.LITTLE_ENDIAN);
   }
 
-  void _intTobytes( int num, Uint8List out, int outOff ) {
-    new Uint32(num).toLittleEndian(out, outOff);
-    /*
-    out[outOff + 3] = (byte)(num >>> 24);
-    out[outOff + 2] = (byte)(num >>> 16);
-    out[outOff + 1] = (byte)(num >>> 8);
-    out[outOff] =     (byte)num;
-    */
+  void _intTobytes(int num, Uint8List out, int outOff ) {
+    pack32(num, out, outOff, Endianness.LITTLE_ENDIAN);
   }
 
 }

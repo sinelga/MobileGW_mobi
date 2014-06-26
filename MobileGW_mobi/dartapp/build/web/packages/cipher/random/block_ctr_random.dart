@@ -1,13 +1,16 @@
-// Copyright (c) 2013, Iván Zaera Avellón - izaera@gmail.com
-// Use of this source code is governed by a LGPL v3 license.
-// See the LICENSE file for more information.
+// Copyright (c) 2013-present, Iván Zaera Avellón - izaera@gmail.com
+
+// This library is dually licensed under LGPL 3 and MPL 2.0. See file LICENSE for more information.
+
+// This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of
+// the MPL was not distributed with this file, you can obtain one at http://mozilla.org/MPL/2.0/.
 
 library cipher.random.block_ctr_random;
 
 import "dart:typed_data";
 
 import "package:cipher/api.dart";
-import "package:cipher/api/ufixnum.dart";
+import "package:cipher/src/ufixnum.dart";
 import "package:cipher/random/secure_random_base.dart";
 import "package:cipher/params/parameters_with_iv.dart";
 
@@ -41,7 +44,7 @@ class BlockCtrRandom extends SecureRandomBase implements SecureRandom {
       _incrementInput();
     }
 
-    return Uint8.clip(_output[_used++]);
+    return clip8(_output[_used++]);
   }
 
   void _incrementInput() {

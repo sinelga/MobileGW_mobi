@@ -35,7 +35,7 @@ class TypeTestEmitter extends CodeEmitterHelper {
     if (cachedClassesUsingTypeVariableTests == null) {
       cachedClassesUsingTypeVariableTests = compiler.codegenWorld.isChecks
           .where((DartType t) => t is TypeVariableType)
-          .map((TypeVariableType v) => v.element.getEnclosingClass())
+          .map((TypeVariableType v) => v.element.enclosingClass)
           .toList();
     }
     return cachedClassesUsingTypeVariableTests;
@@ -49,14 +49,14 @@ class TypeTestEmitter extends CodeEmitterHelper {
         // Avoid emitting [:$isObject:] on all classes but [Object].
         return;
       }
-      other = backend.getImplementationClass(other);
       builder.addProperty(namer.operatorIs(other), js('true'));
     }
 
-    void generateFunctionTypeSignature(Element method, FunctionType type) {
+    void generateFunctionTypeSignature(FunctionElement method,
+                                       FunctionType type) {
       assert(method.isImplementation);
       jsAst.Expression thisAccess = new jsAst.This();
-      Node node = method.parseNode(compiler);
+      Node node = method.node;
       ClosureClassMap closureData =
           compiler.closureToClassMapper.closureMappingCache[node];
       if (closureData != null) {
@@ -64,7 +64,7 @@ class TypeTestEmitter extends CodeEmitterHelper {
             closureData.freeVariableMapping[closureData.thisElement];
         if (thisElement != null) {
           String thisName = namer.instanceFieldPropertyName(thisElement);
-          thisAccess = js('this')[js.string(thisName)];
+          thisAccess = js('this.#', thisName);
         }
       }
       RuntimeTypes rti = backend.rti;
@@ -117,7 +117,7 @@ class TypeTestEmitter extends CodeEmitterHelper {
     ClassElement superclass = cls.superclass;
 
     bool haveSameTypeVariables(ClassElement a, ClassElement b) {
-      if (a.isClosure()) return true;
+      if (a.isClosure) return true;
       return backend.rti.isTrivialSubstitution(a, b);
     }
 
@@ -167,7 +167,7 @@ class TypeTestEmitter extends CodeEmitterHelper {
         // If [cls] is a closure, it has a synthetic call operator method.
         call = cls.lookupBackendMember(Compiler.CALL_OPERATOR_NAME);
       }
-      if (call != null && call.isFunction()) {
+      if (call != null && call.isFunction) {
         generateInterfacesIsTests(compiler.functionClass,
                                   emitIsTest,
                                   emitSubstitution,
@@ -232,7 +232,8 @@ class TypeTestEmitter extends CodeEmitterHelper {
   Map<FunctionType, bool> getFunctionTypeChecksOn(DartType type) {
     Map<FunctionType, bool> functionTypeMap = new Map<FunctionType, bool>();
     for (FunctionType functionType in checkedFunctionTypes) {
-      int maybeSubtype = compiler.types.computeSubtypeRelation(type, functionType);
+      int maybeSubtype =
+          compiler.types.computeSubtypeRelation(type, functionType);
       if (maybeSubtype == Types.IS_SUBTYPE) {
         functionTypeMap[functionType] = true;
       } else if (maybeSubtype == Types.MAYBE_SUBTYPE) {
@@ -279,25 +280,35 @@ class TypeTestEmitter extends CodeEmitterHelper {
     // Add checks to the constructors of instantiated classes.
     // TODO(sigurdm): We should avoid running through this list for each
     // output unit.
+
+    List<jsAst.Statement> statements = <jsAst.Statement>[];
+
     for (ClassElement cls in typeChecks) {
       OutputUnit destination =
           compiler.deferredLoadTask.outputUnitForElement(cls);
       if (destination != outputUnit) continue;
       // TODO(9556).  The properties added to 'holder' should be generated
       // directly as properties of the class object, not added later.
-      String holder = namer.isolateAccess(backend.getImplementationClass(cls));
+      jsAst.Expression holder = namer.elementAccess(cls);
+
       for (TypeCheck check in typeChecks[cls]) {
         ClassElement cls = check.cls;
-        buffer.write('$holder.${namer.operatorIs(cls)}$_=${_}true$N');
+        buffer.write(
+            jsAst.prettyPrint(
+                js('#.# = true', [holder, namer.operatorIs(cls)]),
+                compiler));
+        buffer.write('$N');
         Substitution substitution = check.substitution;
         if (substitution != null) {
-          CodeBuffer body =
-             jsAst.prettyPrint(substitution.getCode(rti, false), compiler);
-          buffer.write('$holder.${namer.substitutionName(cls)}$_=${_}');
-          buffer.write(body);
+          jsAst.Expression body = substitution.getCode(rti, false);
+          buffer.write(
+              jsAst.prettyPrint(
+                  js('#.# = #',
+                      [holder, namer.substitutionName(cls), body]),
+                  compiler));
           buffer.write('$N');
         }
-      };
+      }
     }
   }
 
@@ -313,7 +324,7 @@ class TypeTestEmitter extends CodeEmitterHelper {
     Set<ClassElement> result = new Set<ClassElement>();
     for (ClassElement cls in typeChecks) {
       for (TypeCheck check in typeChecks[cls]) {
-        result.add(backend.getImplementationClass(cls));
+        result.add(cls);
         break;
       }
     }
@@ -341,13 +352,8 @@ class TypeTestEmitter extends CodeEmitterHelper {
     // TODO(karlklose): merge this case with 2 when unifying argument and
     // object checks.
     RuntimeTypes rti = backend.rti;
-    rti.getRequiredArgumentClasses(backend).forEach((ClassElement c) {
-      // Types that we represent with JS native types (like int and String) do
-      // not need a class definition as we use the interceptor classes instead.
-      if (!rti.isJsNative(c)) {
-        addClassWithSuperclasses(c);
-      }
-    });
+    rti.getRequiredArgumentClasses(backend)
+       .forEach(addClassWithSuperclasses);
 
     // 2.  Add classes that are referenced by substitutions in object checks and
     //     their superclasses.
@@ -367,12 +373,12 @@ class TypeTestEmitter extends CodeEmitterHelper {
     }
 
     bool canTearOff(Element function) {
-      if (!function.isFunction() ||
-          function.isConstructor() ||
-          function.isAccessor()) {
+      if (!function.isFunction ||
+          function.isConstructor ||
+          function.isAccessor) {
         return false;
-      } else if (function.isInstanceMember()) {
-        if (!function.getEnclosingClass().isClosure()) {
+      } else if (function.isInstanceMember) {
+        if (!function.enclosingClass.isClosure) {
           return compiler.codegenWorld.hasInvokedGetter(function, compiler);
         }
       }

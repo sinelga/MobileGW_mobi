@@ -8,6 +8,7 @@ import 'dart2jslib.dart' show
     Compiler,
     CompilerTask,
     Constant,
+    ConstantCompiler,
     ConstructedConstant,
     ListConstant,
     MessageKind,
@@ -39,9 +40,6 @@ import 'tree/tree.dart' show
     NamedArgument,
     NewExpression,
     Node;
-
-import 'resolution/resolution.dart' show
-    ConstantMapper;
 
 /**
  * Compiler task that analyzes MirrorsUsed annotations.
@@ -119,7 +117,7 @@ class MirrorUsageAnalyzerTask extends CompilerTask {
   /// the resolver to suppress hints about using new Symbol or
   /// MirrorSystem.getName.
   bool hasMirrorUsage(Element element) {
-    LibraryElement library = element.getLibrary();
+    LibraryElement library = element.library;
     // Internal libraries always have implicit mirror usage.
     return library.isInternalLibrary
         || (librariesWithUsage != null
@@ -133,17 +131,13 @@ class MirrorUsageAnalyzerTask extends CompilerTask {
     for (Node argument in node.send.arguments) {
       NamedArgument named = argument.asNamedArgument();
       if (named == null) continue;
-      Constant value = compiler.constantHandler.compileNodeWithDefinitions(
-          named.expression, mapping, isConst: true);
-
-      ConstantMapper mapper =
-          new ConstantMapper(compiler.constantHandler, mapping, compiler);
-      named.expression.accept(mapper);
+      ConstantCompiler constantCompiler = compiler.resolver.constantCompiler;
+      Constant value = constantCompiler.compileNode(named.expression, mapping);
 
       MirrorUsageBuilder builder =
           new MirrorUsageBuilder(
-              analyzer, mapping.currentElement.getLibrary(), named.expression,
-              value, mapper.constantToNodeMap);
+              analyzer, mapping.currentElement.library, named.expression,
+              value, mapping);
 
       if (named.name.source == 'symbols') {
         analyzer.cachedStrings[value] =
@@ -374,14 +368,14 @@ class MirrorUsageBuilder {
   final LibraryElement enclosingLibrary;
   final Spannable spannable;
   final Constant constant;
-  final Map<Constant, Node> constantToNodeMap;
+  final TreeElements elements;
 
   MirrorUsageBuilder(
       this.analyzer,
       this.enclosingLibrary,
       this.spannable,
       this.constant,
-      this.constantToNodeMap);
+      this.elements);
 
   Compiler get compiler => analyzer.compiler;
 
@@ -441,14 +435,14 @@ class MirrorUsageBuilder {
   /// Find the first non-implementation interface of constant.
   DartType apiTypeOf(Constant constant) {
     DartType type = constant.computeType(compiler);
-    LibraryElement library = type.element.getLibrary();
-    if (type.kind == TypeKind.INTERFACE && library.isInternalLibrary) {
+    LibraryElement library = type.element.library;
+    if (type.isInterfaceType && library.isInternalLibrary) {
       InterfaceType interface = type;
       ClassElement cls = type.element;
       cls.ensureResolved(compiler);
       for (DartType supertype in cls.allSupertypes) {
-        if (supertype.kind == TypeKind.INTERFACE
-            && !supertype.element.getLibrary().isInternalLibrary) {
+        if (supertype.isInterfaceType
+            && !supertype.element.library.isInternalLibrary) {
           return interface.asInstanceOf(supertype.element);
         }
       }
@@ -532,7 +526,7 @@ class MirrorUsageBuilder {
     for (String identifier in identifiers) {
       Element e = findLocalMemberIn(current, identifier);
       if (e == null) {
-        if (current.isLibrary()) {
+        if (current.isLibrary) {
           LibraryElement library = current;
           compiler.reportHint(
               spannable, MessageKind.MIRRORS_CANNOT_RESOLVE_IN_LIBRARY,
@@ -555,7 +549,7 @@ class MirrorUsageBuilder {
   Element findLocalMemberIn(Element element, String name) {
     if (element is ScopeContainerElement) {
       ScopeContainerElement scope = element;
-      if (element.isClass()) {
+      if (element.isClass) {
         ClassElement cls = element;
         cls.ensureResolved(compiler);
       }
@@ -566,7 +560,12 @@ class MirrorUsageBuilder {
 
   /// Attempt to find a [Spannable] corresponding to constant.
   Spannable positionOf(Constant constant) {
-    Node node = constantToNodeMap[constant];
+    Node node;
+    elements.forEachConstantNode((Node n, Constant c) {
+      if (node == null && c == constant) {
+        node = n;
+      }
+    });
     if (node == null) {
       // TODO(ahe): Returning [spannable] here leads to confusing error
       // messages.  For example, consider:

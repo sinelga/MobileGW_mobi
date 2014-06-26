@@ -116,13 +116,9 @@ abstract class String implements Comparable<String>, Pattern {
    * the code units form a surrogate pair. See documentation for
    * [fromCharCodes].
    *
-   * Creating a String with half of a surrogate pair is legal but generally
-   * discouraged.
+   * Creating a String with half of a surrogate pair is allowed.
    */
-  factory String.fromCharCode(int charCode) {
-    List<int> charCodes = new List<int>.filled(1, charCode);
-    return new String.fromCharCodes(charCodes);
-  }
+  external factory String.fromCharCode(int charCode);
 
   /**
    * Returns the string value of the environment declaration [name].
@@ -184,7 +180,15 @@ abstract class String implements Comparable<String>, Pattern {
   int get length;
 
   /**
-   * Returns true if the two strings are equal. False, otherwise.
+   * Returns a hash code derived from the code units of the string.
+   *
+   * This is compatible with [operator==]. Strings with the same sequence
+   * of code units have the same hash code.
+   */
+  int get hashCode;
+
+  /**
+   * Returns true if other is a `String` with the same sequence of code units.
    *
    * This method compares each individual code unit of the strings.
    * It does not check for Unicode equivalence.
@@ -197,7 +201,7 @@ abstract class String implements Comparable<String>, Pattern {
    * a single rune), whereas the second string encodes it as 'e' with the
    * combining accent character '◌́'.
    */
-  bool operator ==(var other);
+  bool operator ==(Object other);
 
   /**
    * Returns true if this string ends with [other]. For example:

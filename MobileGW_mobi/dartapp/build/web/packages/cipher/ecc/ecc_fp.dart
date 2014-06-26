@@ -1,6 +1,9 @@
-// Copyright (c) 2013, Iván Zaera Avellón - izaera@gmail.com
-// Use of this source code is governed by a LGPL v3 license.
-// See the LICENSE file for more information.
+// Copyright (c) 2013-present, Iván Zaera Avellón - izaera@gmail.com
+
+// This library is dually licensed under LGPL 3 and MPL 2.0. See file LICENSE for more information.
+
+// This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of
+// the MPL was not distributed with this file, you can obtain one at http://mozilla.org/MPL/2.0/.
 
 library cipher.ecc.ecc_fp;
 
@@ -8,7 +11,6 @@ import "dart:typed_data";
 
 import 'package:bignum/bignum.dart';
 import "package:cipher/api.dart";
-import "package:cipher/api/ufixnum.dart";
 import "package:cipher/ecc/ecc_base.dart" hide ECFieldElementBase, ECPointBase, ECCurveBase;
 import "package:cipher/ecc/ecc_base.dart" as ecc;
 
@@ -180,12 +182,12 @@ class ECPoint extends ecc.ECPointBase {
     var qLength = x.byteLength;
     if( compressed ) {
 
-      Uint8 PC;
+      int PC;
 
       if( y.toBigInteger().testBit(0) ) {
-        PC = new Uint8(0x03);
+        PC = 0x03;
       } else {
-        PC = new Uint8(0x02);
+        PC = 0x02;
       }
 
       Uint8List X = _x9IntegerToBytes( x.toBigInteger(), qLength );

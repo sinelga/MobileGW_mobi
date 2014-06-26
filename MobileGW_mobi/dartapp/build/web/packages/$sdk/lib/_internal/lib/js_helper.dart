@@ -38,6 +38,7 @@ import 'dart:_foreign_helper' show
     JS_OPERATOR_AS_PREFIX,
     JS_OPERATOR_IS_PREFIX,
     JS_SIGNATURE_NAME,
+    JS_STRING_CONCAT,
     RAW_DART_FUNCTION_REF;
 
 import 'dart:_interceptors';
@@ -47,7 +48,8 @@ import 'dart:_internal' show MappedIterable;
 import 'dart:_js_names' show
     extractKeys,
     mangledNames,
-    unmangleGlobalNameIfPreservedAnyways;
+    unmangleGlobalNameIfPreservedAnyways,
+    unmangleAllIdentifiersIfPreservedAnyways;
 
 part 'annotations.dart';
 part 'constant_map.dart';
@@ -106,10 +108,6 @@ void throwInvalidReflectionError(String memberName) {
       "because it is not included in a @MirrorsUsed annotation.");
 }
 
-bool hasReflectableProperty(var jsFunction) {
-  return JS('bool', '# in #', JS_GET_NAME("REFLECTABLE"), jsFunction);
-}
-
 class JSInvocationMirror implements Invocation {
   static const METHOD = 0;
   static const GETTER = 1;
@@ -149,8 +147,7 @@ class JSInvocationMirror implements Invocation {
 
   List get positionalArguments {
     if (isGetter) return const [];
-    var argumentCount =
-        _arguments.length - _namedArgumentNames.length;
+    var argumentCount = _arguments.length - _namedArgumentNames.length;
     if (argumentCount == 0) return const [];
     var list = [];
     for (var index = 0 ; index < argumentCount ; index++) {
@@ -182,8 +179,14 @@ class JSInvocationMirror implements Invocation {
     // critical, we might want to dynamically change [interceptedNames]
     // to be a JavaScript object with intercepted names as property
     // instead of a JavaScript array.
+    // TODO(floitsch): we already add stubs (tear-off getters) as properties
+    // in init.interceptedNames.
+    // Finish the transition and always use the object as hashtable.
     bool isIntercepted =
-        JS('int', '#.indexOf(#)', interceptedNames, name) != -1;
+        JS("bool",
+            'Object.prototype.hasOwnProperty.call(init.interceptedNames, #) ||'
+            '#.indexOf(#) !== -1',
+            name, interceptedNames, name);
     if (isIntercepted) {
       receiver = interceptor;
       if (JS('bool', '# === #', object, interceptor)) {
@@ -210,9 +213,6 @@ class JSInvocationMirror implements Invocation {
       isCatchAll = true;
     }
     if (JS('bool', 'typeof # == "function"', method)) {
-      if (!hasReflectableProperty(method)) {
-        throwInvalidReflectionError(_symbol_dev.Symbol.getName(memberName));
-      }
       if (isCatchAll) {
         return new CachedCatchAllInvocation(
             name, method, isIntercepted, interceptor);
@@ -262,6 +262,7 @@ class CachedInvocation {
                    this.cachedInterceptor);
 
   bool get isNoSuchMethod => false;
+  bool get isGetterStub => JS("bool", "!!#.\$getterStub", jsFunction);
 
   /// Applies [jsFunction] to [victim] with [arguments].
   /// Users of this class must take care to check the arguments first.
@@ -286,6 +287,8 @@ class CachedCatchAllInvocation extends CachedInvocation {
                            Interceptor cachedInterceptor)
       : info = new ReflectionInfo(jsFunction),
         super(name, jsFunction, isIntercepted, cachedInterceptor);
+
+  bool get isGetterStub => false;
 
   invokeOn(Object victim, List arguments) {
     var receiver = victim;
@@ -338,6 +341,7 @@ class CachedNoSuchMethodInvocation {
   CachedNoSuchMethodInvocation(this.interceptor);
 
   bool get isNoSuchMethod => true;
+  bool get isGetterStub => false;
 
   invokeOn(Object victim, Invocation invocation) {
     var receiver = (interceptor == null) ? victim : interceptor;
@@ -635,29 +639,38 @@ class Primitives {
 
   /// Creates a string containing the complete type for the class [className]
   /// with the given type arguments.
+  ///
+  /// In minified mode, uses the unminified names if available.
   static String formatType(String className, List typeArguments) {
-    return '$className${joinArguments(typeArguments, 0)}';
+    return unmangleAllIdentifiersIfPreservedAnyways
+        ('$className${joinArguments(typeArguments, 0)}');
   }
 
   /// Returns the type of [object] as a string (including type arguments).
+  ///
+  /// In minified mode, uses the unminified names if available.
   static String objectTypeName(Object object) {
     String name = constructorNameFallback(getInterceptor(object));
     if (name == 'Object') {
-      // Try to decompile the constructor by turning it into a string
-      // and get the name out of that. If the decompiled name is a
-      // string, we use that instead of the very generic 'Object'.
-      var decompiled = JS('var', r'#.match(/^\s*function\s*(\S*)\s*\(/)[1]',
-                          JS('var', r'String(#.constructor)', object));
-      if (decompiled is String) name = decompiled;
+      // Try to decompile the constructor by turning it into a string and get
+      // the name out of that. If the decompiled name is a string containing an
+      // identifier, we use that instead of the very generic 'Object'.
+      var decompiled =
+          JS('var', r'#.match(/^\s*function\s*(\S*)\s*\(/)[1]',
+              JS('var', r'String(#.constructor)', object));
+      if (decompiled is String)
+        if (JS('bool', r'/^\w+$/.test(#)', decompiled))
+          name = decompiled;
     }
     // TODO(kasperl): If the namer gave us a fresh global name, we may
     // want to remove the numeric suffix that makes it unique too.
-    if (identical(name.codeUnitAt(0), DOLLAR_CHAR_VALUE)) {
+    if (name.length > 1 && identical(name.codeUnitAt(0), DOLLAR_CHAR_VALUE)) {
       name = name.substring(1);
     }
     return formatType(name, getRuntimeTypeInfo(object));
   }
 
+  /// In minified mode, uses the unminified names if available.
   static String objectToString(Object object) {
     String name = objectTypeName(object);
     return "Instance of '$name'";
@@ -760,8 +773,23 @@ class Primitives {
     return _fromCharCodeApply(charCodes);
   }
 
+  static String stringFromCharCode(charCode) {
+    if (0 <= charCode) {
+      if (charCode <= 0xffff) {
+        return JS('String', 'String.fromCharCode(#)', charCode);
+      }
+      if (charCode <= 0x10ffff) {
+        var bits = charCode - 0x10000;
+        var low = 0xDC00 | (bits & 0x3ff);
+        var high = 0xD800 | (bits >> 10);
+        return  JS('String', 'String.fromCharCode(#, #)', high, low);
+      }
+    }
+    throw new RangeError.range(charCode, 0, 0x10ffff);
+  }
+
   static String stringConcatUnchecked(String string1, String string2) {
-    return JS('String', r'# + #', string1, string2);
+    return JS_STRING_CONCAT(string1, string2);
   }
 
   static String getTimeZoneName(receiver) {
@@ -948,7 +976,8 @@ class Primitives {
       });
     }
 
-    String selectorName = 'call\$$argumentCount$names';
+    String selectorName =
+      '${JS_GET_NAME("CALL_PREFIX")}\$$argumentCount$names';
 
     return function.noSuchMethod(
         createUnmangledInvocationMirror(
@@ -1021,7 +1050,7 @@ class Primitives {
       arguments.addAll(positionalArguments);
     }
 
-    String selectorName = 'call\$$argumentCount';
+    String selectorName = '${JS_GET_NAME("CALL_PREFIX")}\$$argumentCount';
     var jsFunction = JS('var', '#[#]', function, selectorName);
     if (jsFunction == null) {
 
@@ -1037,44 +1066,8 @@ class Primitives {
     return JS('var', '#.apply(#, #)', jsFunction, function, arguments);
   }
 
-  static getConstructorOrInterceptorToken(String className) {
-    // TODO(ahe): Generalize this and improve test coverage of
-    // reflecting on intercepted classes.
-
-    // We should probably not be mappling the dart:core interface names to the
-    // interceptor library implementation classes like this.  `JSArray` is just
-    // one implementation of `List`, there are others that have no relationship
-    // with JSArray other than implementing a common interface.
-    //
-    // For now `List` in dart:core and `JSArray` is in dart:_interceptors.  We
-    // need to maintain a distinction to get the correct library mirror.
-    //
-    // TODO(17394): Short term: Refactor to avoid two copies of the list of
-    // known interceptor implementations.
-    //
-    // TODO(17394): Longer term: The proper interfaces with abstract methods
-    // should be emitted.
-
-    if (JS('bool', '# == "String"', className)) return const JSString();
-    if (JS('bool', '# == "int"', className)) return const JSInt();
-    if (JS('bool', '# == "double"', className)) return const JSDouble();
-    if (JS('bool', '# == "num"', className)) return const JSNumber();
-    if (JS('bool', '# == "bool"', className)) return const JSBool();
-    if (JS('bool', '# == "List"', className)) return const JSArray();
-    if (JS('bool', '# == "Null"', className)) return const JSNull();
-    return JS('var', 'init.allClasses[#]', className);
-  }
-
-  static bool isInterceptorToken(var object) {
-    // This must match the list of tokens returned by
-    // [getConstructorOrInterceptorToken] above.
-    return JS('bool', '# === #', object, const JSString())
-        || JS('bool', '# === #', object, const JSInt())
-        || JS('bool', '# === #', object, const JSDouble())
-        || JS('bool', '# === #', object, const JSNumber())
-        || JS('bool', '# === #', object, const JSBool())
-        || JS('bool', '# === #', object, const JSArray())
-        || JS('bool', '# === #', object, const JSNull());
+  static _mangledNameMatchesType(String mangledName, TypeImpl type) {
+    return JS('bool', '# == #', mangledName, type._typeName);
   }
 
   static bool identicalImplementation(a, b) {
@@ -1092,16 +1085,19 @@ class Primitives {
 class JsCache {
   /// Returns a JavaScript object suitable for use as a cache.
   static allocate() {
-    var result = JS('=Object', '{x:0}');
+    var result = JS('=Object', 'Object.create(null)');
     // Deleting a property makes V8 assume that it shouldn't create a hidden
     // class for [result] and map transitions. Although these map transitions
     // pay off if there are many cache hits for the same keys, it becomes
     // really slow when there aren't many repeated hits.
+    JS('void', '#.x=0', result);
     JS('void', 'delete #.x', result);
     return result;
   }
 
-  static fetch(cache, String key) => JS('', '#[#]', cache, key);
+  static fetch(cache, String key) {
+    return JS('', '#[#]', cache, key);
+  }
 
   static void update(cache, String key, value) {
     JS('void', '#[#] = #', cache, key, value);
@@ -1173,6 +1169,7 @@ checkString(value) {
  * The code in [unwrapException] deals with getting the original Dart
  * object out of the wrapper again.
  */
+@NoInline()
 wrapException(ex) {
   if (ex == null) ex = new NullThrownError();
   var wrapper = JS('', 'new Error()');
@@ -1479,7 +1476,7 @@ class TypeErrorDecoder {
     // "(.*)\\.(.*) is not a function"
 
     var function = JS('', r"""function($expr$) {
-  var $argumentsExpr$ = '$arguments$'
+  var $argumentsExpr$ = '$arguments$';
   try {
     $expr$.$method$($argumentsExpr$);
   } catch (e) {
@@ -1494,7 +1491,7 @@ class TypeErrorDecoder {
   static String provokeCallErrorOnNull() {
     // See [provokeCallErrorOn] for a detailed explanation.
     var function = JS('', r"""function() {
-  var $argumentsExpr$ = '$arguments$'
+  var $argumentsExpr$ = '$arguments$';
   try {
     null.$method$($argumentsExpr$);
   } catch (e) {
@@ -1509,7 +1506,7 @@ class TypeErrorDecoder {
   static String provokeCallErrorOnUndefined() {
     // See [provokeCallErrorOn] for a detailed explanation.
     var function = JS('', r"""function() {
-  var $argumentsExpr$ = '$arguments$'
+  var $argumentsExpr$ = '$arguments$';
   try {
     (void 0).$method$($argumentsExpr$);
   } catch (e) {
@@ -1781,10 +1778,6 @@ int objectHashCode(var object) {
  * Called by generated code to build a map literal. [keyValuePairs] is
  * a list of key, value, key, value, ..., etc.
  */
-makeLiteralMap(keyValuePairs) {
-  return fillLiteralMap(keyValuePairs, new LinkedHashMap());
-}
-
 fillLiteralMap(keyValuePairs, Map result) {
   // TODO(johnniwinther): Use JSArray to optimize this code instead of calling
   // [getLength] and [getIndex].
@@ -1970,6 +1963,7 @@ abstract class Closure implements Function {
         isIntercepted = true;
       }
       trampoline = forwardCallTo(receiver, function, isIntercepted);
+      JS('', '#.\$reflectionInfo = #', trampoline, reflectionInfo);
     } else {
       JS('', '#.\$name = #', prototype, propertyName);
     }
@@ -2007,7 +2001,7 @@ abstract class Closure implements Function {
       }
     }
 
-    JS('', '#["call*"] = #', prototype, function);
+    JS('', '#["call*"] = #', prototype, trampoline);
 
     return constructor;
   }
@@ -2229,6 +2223,14 @@ abstract class Closure implements Function {
         '}');
   }
 
+  // The backend adds a special getter of the form
+  //
+  // Closure get call => this;
+  //
+  // to allow tearing off a closure from itself. We do this magically in the
+  // backend rather than simply adding it here, as we do not want this getter
+  // to be visible to resolution and the generation of extra stubs.
+
   String toString() => "Closure";
 }
 
@@ -2353,12 +2355,6 @@ jsPropertyAccess(var jsObject, String property) {
  * FallThroughError exception that will be thrown.
  */
 getFallThroughError() => new FallThroughErrorImplementation();
-
-/**
- * Represents the type dynamic. The compiler treats this specially.
- */
-abstract class Dynamic_ {
-}
 
 /**
  * A metadata annotation describing the types instantiated by a native element.
@@ -2694,6 +2690,13 @@ checkMalformedType(value, message) {
   throw new TypeErrorImplementation.fromMessage(message);
 }
 
+@NoInline()
+void checkDeferredIsLoaded(String loadId, String uri) {
+  if (!_loadedLibraries.contains(loadId)) {
+    throw new DeferredNotLoadedError(uri);
+  }
+}
+
 /**
  * Special interface recognized by the compiler and implemented by DOM
  * objects that support integer indexing. This interface is not
@@ -2784,6 +2787,16 @@ class RuntimeError extends Error {
   final message;
   RuntimeError(this.message);
   String toString() => "RuntimeError: $message";
+}
+
+class DeferredNotLoadedError extends Error {
+  String libraryName;
+
+  DeferredNotLoadedError(this.libraryName);
+
+  String toString() {
+    return "Deferred library $libraryName was not loaded.";
+  }
 }
 
 abstract class RuntimeType {
@@ -3193,39 +3206,34 @@ String getIsolateAffinityTag(String name) {
   return JS('String', 'init.getIsolateTag(#)', name);
 }
 
-typedef Future<bool> LoadLibraryFunctionType();
+typedef Future<Null> LoadLibraryFunctionType();
 
 LoadLibraryFunctionType _loadLibraryWrapper(String loadId) {
   return () => loadDeferredLibrary(loadId);
 }
 
-final Map<String, Future<bool>> _loadedLibraries = <String, Future<bool>>{};
+final Map<String, Future<Null>> _loadingLibraries = <String, Future<Null>>{};
+final Set<String> _loadedLibraries = new Set<String>();
 
-Future<bool> loadDeferredLibrary(String loadId, [String uri]) {
-  List hunkNames = new List();
-  if (JS('bool', '\$.libraries_to_load[#] === undefined', loadId)) {
-    return new Future(() => false);
-  }
-  for (int index = 0;
-       index < JS('int', '\$.libraries_to_load[#].length', loadId);
-       ++index) {
-    hunkNames.add(JS('String', '\$.libraries_to_load[#][#]',
-                     loadId, index));
-  }
-  Iterable<Future<bool>> allLoads =
-      hunkNames.map((hunkName) => _loadHunk(hunkName, uri));
-  return Future.wait(allLoads).then((results) {
-    return results.any((x) => x);
-  });
+Future<Null> loadDeferredLibrary(String loadId, [String uri]) {
+  List<List<String>> hunkLists = JS('JSExtendableArray|Null',
+      '\$.libraries_to_load[#]', loadId);
+  if (hunkLists == null) return new Future.value(null);
+
+  return Future.forEach(hunkLists, (hunkNames) {
+    Iterable<Future<Null>> allLoads =
+        hunkNames.map((hunkName) => _loadHunk(hunkName, uri));
+    return Future.wait(allLoads).then((_) => null);
+  }).then((_) => _loadedLibraries.add(loadId));
 }
 
-Future<bool> _loadHunk(String hunkName, String uri) {
+Future<Null> _loadHunk(String hunkName, String uri) {
   // TODO(ahe): Validate libraryName.  Kasper points out that you want
   // to be able to experiment with the effect of toggling @DeferLoad,
   // so perhaps we should silently ignore "bad" library names.
-  Future<bool> future = _loadedLibraries[hunkName];
+  Future<Null> future = _loadingLibraries[hunkName];
   if (future != null) {
-    return future.then((_) => false);
+    return future.then((_) => null);
   }
 
   if (uri == null) {
@@ -3237,7 +3245,7 @@ Future<bool> _loadHunk(String hunkName, String uri) {
   if (Primitives.isJsshell || Primitives.isD8) {
     // TODO(ahe): Move this code to a JavaScript command helper script that is
     // not included in generated output.
-    return _loadedLibraries[hunkName] = new Future<bool>(() {
+    return _loadingLibraries[hunkName] = new Future<Null>(() {
       try {
         // Create a new function to avoid getting access to current function
         // context.
@@ -3245,14 +3253,14 @@ Future<bool> _loadHunk(String hunkName, String uri) {
       } catch (error, stackTrace) {
         throw new DeferredLoadException("Loading $uri failed.");
       }
-      return true;
+      return null;
     });
   } else if (isWorker()) {
     // We are in a web worker. Load the code with an XMLHttpRequest.
-    return _loadedLibraries[hunkName] = new Future<bool>(() {
-      Completer completer = new Completer<bool>();
+    return _loadingLibraries[hunkName] = new Future<Null>(() {
+      Completer completer = new Completer<Null>();
       enterJsAsync();
-      Future<bool> leavingFuture = completer.future.whenComplete(() {
+      Future<Null> leavingFuture = completer.future.whenComplete(() {
         leaveJsAsync();
       });
 
@@ -3277,7 +3285,7 @@ Future<bool> _loadHunk(String hunkName, String uri) {
             new DeferredLoadException("Evaluating $uri failed."));
           return;
         }
-        completer.complete(true);
+        completer.complete(null);
       }, 1));
 
       var fail = convertDartClosureToJS((event) {
@@ -3291,15 +3299,15 @@ Future<bool> _loadHunk(String hunkName, String uri) {
     });
   }
   // We are in a dom-context.
-  return _loadedLibraries[hunkName] = new Future<bool>(() {
-    Completer completer = new Completer<bool>();
+  return _loadingLibraries[hunkName] = new Future<Null>(() {
+    Completer completer = new Completer<Null>();
     // Inject a script tag.
     var script = JS('', 'document.createElement("script")');
     JS('', '#.type = "text/javascript"', script);
     JS('', '#.src = #', script, uri);
     JS('', '#.addEventListener("load", #, false)',
        script, convertDartClosureToJS((event) {
-      completer.complete(true);
+      completer.complete(null);
     }, 1));
     JS('', '#.addEventListener("error", #, false)',
        script, convertDartClosureToJS((event) {

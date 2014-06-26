@@ -21,15 +21,14 @@ import '../elements/elements.dart' show
     ConstructorBodyElement;
 
 import '../js/js.dart' show
-    js;
+    js, templateManager;
 
 import '../js_backend/js_backend.dart' show
-    CheckedModeHelper,
     CheckedModeHelper,
     ConstantEmitter,
     CustomElementsAnalysis,
     JavaScriptBackend,
-    JavaScriptBackend,
+    JavaScriptConstantCompiler,
     Namer,
     NativeEmitter,
     RuntimeTypes,

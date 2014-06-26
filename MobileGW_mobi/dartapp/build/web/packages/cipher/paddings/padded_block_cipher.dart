@@ -1,6 +1,9 @@
-// Copyright (c) 2013, Iván Zaera Avellón - izaera@gmail.com
-// Use of this source code is governed by a LGPL v3 license.
-// See the LICENSE file for more information.
+// Copyright (c) 2013-present, Iván Zaera Avellón - izaera@gmail.com
+
+// This library is dually licensed under LGPL 3 and MPL 2.0. See file LICENSE for more information.
+
+// This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of
+// the MPL was not distributed with this file, you can obtain one at http://mozilla.org/MPL/2.0/.
 
 library cipher.paddings.padded_block_cipher;
 
@@ -35,9 +38,22 @@ class PaddedBlockCipherImpl implements PaddedBlockCipher {
   }
 
   Uint8List process(Uint8List data) {
-    var out = new Uint8List(blockSize);
-    var len = doFinal(data, 0, out, 0);
-    return out.sublist(0, len);
+    var blocks = (data.length ~/ blockSize) + 1;
+
+    var out = new Uint8List(blocks * blockSize);
+    for (var i = 0; i < (blocks - 1); i++) {
+      var offset = (i * blockSize);
+      processBlock(data, offset, out, offset);
+    }
+
+    var remainder = (data.length % blockSize);
+    if (remainder == 0) {
+      remainder = blockSize;
+    }
+    var offset = ((blocks - 1) * blockSize);
+    doFinal(data, offset, out, offset);
+
+    return out;
   }
 
   int processBlock(Uint8List inp, int inpOff, Uint8List out, int outOff) {

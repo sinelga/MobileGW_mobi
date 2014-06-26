@@ -1,15 +1,20 @@
-// Copyright (c) 2013, Iván Zaera Avellón - izaera@gmail.com
-// Use of this source code is governed by a LGPL v3 license.
-// See the LICENSE file for more information.
+// Copyright (c) 2013-present, Iván Zaera Avellón - izaera@gmail.com
+
+// This library is dually licensed under LGPL 3 and MPL 2.0. See file LICENSE for more information.
+
+// This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of
+// the MPL was not distributed with this file, you can obtain one at http://mozilla.org/MPL/2.0/.
 
 /**
- * This library contains all out-of-the-box implementations of the interfaces provided in the API which are compatible with
- * client and server sides.
+ * This library contains all out-of-the-box implementations of the interfaces provided in the API
+ * which are compatible with client and server sides.
  *
- * You can extend it with client side algorithms by including library [cipher.impl_client] in addition to this one. You can
- * also extend is with its server side counterpart by including library [cipher.impl_server] in addition to this one
+ * You can extend it with client side algorithms by including library [cipher.impl_client] in
+ * addition to this one. You can also extend is with its server side counterpart by including
+ * library [cipher.impl_server] in addition to this one
  *
- * You must call [initCipher] method before using this library to load all implementations into cipher's API factories.
+ * You must call [initCipher] method before using this library to load all implementations into
+ * cipher's API factories.
  */
 library cipher.impl.base;
 
@@ -71,7 +76,7 @@ import "package:cipher/signers/rsa_signer.dart";
 
 import "package:cipher/stream/salsa20.dart";
 
-part "../_parts/impl/base/ecc_curves.dart";
+part "../src/impl/base/ecc_curves.dart";
 
 bool _initialized = false;
 

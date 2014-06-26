@@ -55,9 +55,6 @@
  */
 library dart.mirrors;
 
-import 'dart:async';
-import 'dart:isolate';
-
 /**
  * A [MirrorSystem] is the main interface used to reflect on a set of
  * associated libraries.
@@ -521,11 +518,6 @@ abstract class ClosureMirror implements InstanceMirror {
    */
   InstanceMirror apply(List positionalArguments,
                        [Map<Symbol, dynamic> namedArguments]);
-
-  /**
-   * Not yet supported. Calling this method throws an [UnsupportedError].
-   */
-  InstanceMirror findInContext(Symbol name, {ifAbsent: null});
 }
 
 /**
@@ -569,7 +561,7 @@ abstract class LibraryMirror implements DeclarationMirror, ObjectMirror {
 }
 
 /// A mirror on an import or export declaration.
-abstract class LibraryDependencyMirror {
+abstract class LibraryDependencyMirror implements Mirror {
   /// Is `true` if this dependency is an import.
   bool get isImport;
 
@@ -597,7 +589,7 @@ abstract class LibraryDependencyMirror {
 }
 
 /// A mirror on a show/hide combinator declared on a library dependency.
-abstract class CombinatorMirror {
+abstract class CombinatorMirror implements Mirror {
   /// The list of identifiers on the combinator.
   List<Symbol> get identifiers;
 
